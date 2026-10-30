@@ -16,6 +16,7 @@ type ManagedTemplate = {
   description: string;
   category: string;
   type: TemplateType;
+  thumbnailPath: string | null;
 };
 type TemplateType = 'document' | 'presentation';
 
@@ -47,6 +48,7 @@ export default function ManageTemplatesPage() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState({ name: '', description: '', category: '' });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [manageMessage, setManageMessage] = useState('');
@@ -118,6 +120,12 @@ export default function ManageTemplatesPage() {
     return () => window.clearTimeout(timer);
   }, [loadTemplates]);
 
+  useEffect(() => {
+    return () => {
+      if (thumbnailPreviewUrl) URL.revokeObjectURL(thumbnailPreviewUrl);
+    };
+  }, [thumbnailPreviewUrl]);
+
   function beginEdit(template: ManagedTemplate) {
     setEditingId(template.id);
     setEditValues({
@@ -127,6 +135,7 @@ export default function ManageTemplatesPage() {
     });
     setManageMessage('');
     setThumbnailFile(null);
+    setThumbnailPreviewUrl(null);
     notify('success', 'Đang chỉnh sửa thông tin mẫu.');
   }
 
@@ -145,6 +154,7 @@ export default function ManageTemplatesPage() {
       if (!response.ok) {
         throw new Error(typeof body?.message === 'string' ? body.message : 'Không thể cập nhật mẫu.');
       }
+      let updatedTemplate = body as ManagedTemplate;
       if (thumbnailFile) {
         const imageData = new FormData();
         imageData.set('file', thumbnailFile);
@@ -160,13 +170,21 @@ export default function ManageTemplatesPage() {
               : 'Thông tin mẫu đã lưu nhưng ảnh thumbnail chưa cập nhật được.',
           );
         }
+        updatedTemplate = imageBody as ManagedTemplate;
       }
       setTemplates((current) => current.map((template) => template.id === id
-        ? { ...template, name: body.name, description: body.description, category: body.category }
+        ? {
+          ...template,
+          name: updatedTemplate.name,
+          description: updatedTemplate.description,
+          category: updatedTemplate.category,
+          thumbnailPath: updatedTemplate.thumbnailPath,
+        }
         : template));
       if (categoryFilter && categoryFilter !== body.category) setCategoryFilter('');
       setEditingId(null);
       setThumbnailFile(null);
+      setThumbnailPreviewUrl(null);
       const message = 'Đã cập nhật thông tin mẫu.';
       setManageMessage(message);
       notify('success', message);
@@ -447,7 +465,7 @@ export default function ManageTemplatesPage() {
                           Tên mẫu
                           <input required maxLength={180} value={editValues.name} onChange={(event) => setEditValues((current) => ({ ...current, name: event.target.value }))} />
                         </label>
-                        <label className="field">
+                        <label className="field managed-edit-description">
                           Mô tả
                           <textarea required maxLength={2000} value={editValues.description} onChange={(event) => setEditValues((current) => ({ ...current, description: event.target.value }))} />
                         </label>
@@ -460,31 +478,45 @@ export default function ManageTemplatesPage() {
                           <input
                             type="file"
                             accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                            onChange={(event) => setThumbnailFile(event.target.files?.[0] ?? null)}
+                            onChange={(event) => {
+                              const selectedFile = event.target.files?.[0] ?? null;
+                              setThumbnailFile(selectedFile);
+                              setThumbnailPreviewUrl(selectedFile ? URL.createObjectURL(selectedFile) : null);
+                            }}
                           />
                           <small>Chọn ảnh PNG, JPG hoặc WebP, tối đa 5 MB. Để trống nếu chỉ sửa thông tin.</small>
+                          <div className="thumbnail-edit-preview">
+                            <Image
+                              src={thumbnailPreviewUrl ?? `${API}/api/templates/${template.id}/thumbnail?v=${encodeURIComponent(template.thumbnailPath ?? 'default')}`}
+                              alt={thumbnailPreviewUrl ? `Ảnh thumbnail mới của ${template.name}` : `Thumbnail hiện tại của ${template.name}`}
+                              fill
+                              sizes="(max-width: 760px) 100vw, 440px"
+                              unoptimized
+                            />
+                            <span>{thumbnailFile ? `Ảnh mới: ${thumbnailFile.name}` : template.thumbnailPath ? 'Thumbnail hiện tại' : 'Ảnh minh họa tự động'}</span>
+                          </div>
                         </label>
-                        <div className="thumbnail-edit-preview">
-                          <Image
-                            src={`${API}/api/templates/${template.id}/thumbnail`}
-                            alt={`Thumbnail hiện tại của ${template.name}`}
-                            fill
-                            sizes="240px"
-                            unoptimized
-                          />
-                          <span>{thumbnailFile ? `Ảnh mới: ${thumbnailFile.name}` : 'Thumbnail hiện tại'}</span>
-                        </div>
-                        <div className="managed-template-actions">
+                        <div className="managed-template-actions managed-template-edit-actions">
                           <button className="primary-button" type="submit" disabled={savingId === template.id}>
                             {savingId === template.id ? 'Đang lưu…' : 'Lưu thay đổi'}
                           </button>
-                          <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setThumbnailFile(null); }} disabled={savingId === template.id}>
+                          <button className="secondary-button" type="button" onClick={() => { setEditingId(null); setThumbnailFile(null); setThumbnailPreviewUrl(null); }} disabled={savingId === template.id}>
                             Hủy
                           </button>
                         </div>
                       </form>
                     ) : (
                       <>
+                        <div className="managed-template-thumbnail">
+                          <Image
+                            src={`${API}/api/templates/${template.id}/thumbnail?v=${encodeURIComponent(template.thumbnailPath ?? 'default')}`}
+                            alt={`Ảnh thumbnail mẫu ${template.name}`}
+                            fill
+                            sizes="(max-width: 760px) 100vw, 220px"
+                            unoptimized
+                          />
+                          <span>{template.type === 'document' ? 'DOCX' : 'PPTX'}</span>
+                        </div>
                         <div className="managed-template-info">
                           <div className="meta">
                             <span>{template.type === 'document' ? 'TÀI LIỆU WORD' : 'BẢN TRÌNH CHIẾU'}</span>

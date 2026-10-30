@@ -1080,14 +1080,42 @@ textarea:focus-visible {
 }
 
 .managed-template {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 20px;
   padding: 17px;
   border: 1px solid var(--line);
   border-radius: 5px;
   background: var(--paper);
+}
+
+.managed-template-thumbnail {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #f5f5f5;
+}
+
+.managed-template-thumbnail img {
+  object-fit: cover;
+}
+
+.managed-template-thumbnail span {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .managed-template-info {
@@ -1101,15 +1129,32 @@ textarea:focus-visible {
 }
 
 .managed-template-edit {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  column-gap: 24px;
+  row-gap: 4px;
   width: 100%;
-  max-width: 680px;
+  max-width: none;
+}
+
+.managed-template-edit .managed-edit-description,
+.managed-template-edit .managed-template-edit-actions {
+  grid-column: 1 / -1;
+}
+
+.managed-template-edit .field input[type="file"] {
+  min-height: 46px;
+  padding: 9px;
+  font-size: 13px;
 }
 
 .thumbnail-edit-preview {
   position: relative;
-  width: min(100%, 320px);
+  width: min(100%, 440px);
   aspect-ratio: 16 / 9;
-  margin: 12px 0 18px;
+  margin: 0 0 18px;
   overflow: hidden;
   border: 1px solid var(--line);
   background: #f7f7f7;
@@ -1133,6 +1178,12 @@ textarea:focus-visible {
 
 .managed-template-edit .field:last-of-type {
   margin-bottom: 0;
+}
+
+.managed-template-edit-actions {
+  justify-content: flex-start;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
 }
 
 .managed-template-actions {
@@ -1219,7 +1270,24 @@ textarea:focus-visible {
   .managed-template,
   .managed-templates-heading {
     align-items: stretch;
-    flex-direction: column;
+  }
+
+  .managed-template {
+    grid-template-columns: 1fr;
+  }
+
+  .managed-template-edit {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .managed-template-edit .managed-edit-description,
+  .managed-template-edit .managed-template-edit-actions {
+    grid-column: 1;
+  }
+
+  .managed-template-thumbnail {
+    max-width: 420px;
   }
 
   .managed-template-filters {
