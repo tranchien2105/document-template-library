@@ -1,6 +1,6 @@
 # Papertrail — Thư viện mẫu tài liệu
 
-Papertrail là ứng dụng giúp người dùng **tìm mẫu, xem trước, điền nội dung và tải xuống tài liệu DOCX/PPTX**. Dự án được xây dựng cho bài đánh giá tuyển dụng.
+Papertrail là ứng dụng web để **tìm mẫu, xem trước, điền nội dung và tải tài liệu DOCX/PPTX**. Đây là sản phẩm cho bài kiểm tra tuyển dụng Fullstack.
 
 ## Dùng thử ngay
 
@@ -29,7 +29,7 @@ Nhấn `Ctrl+C` để dừng. `docker compose down` xóa container nhưng giữ 
 | Quản lý mẫu | Tải DOCX/PPTX lên, sửa thông tin, cập nhật thumbnail hoặc ẩn mẫu |
 | Tài liệu của tôi | Xem và tải các file đã tạo |
 
-Kho mẫu khởi tạo gồm **5 DOCX và 3 PPTX**. Thư viện đọc danh sách từ backend và PostgreSQL, không khai báo cứng từng thẻ mẫu trong giao diện.
+Ứng dụng có sẵn **5 mẫu DOCX và 3 mẫu PPTX**. Backend lấy thông tin ban đầu từ manifest và lưu vào PostgreSQL. Khi thêm mẫu qua trang Quản lý mẫu, thư viện hiển thị mẫu đó từ API mà không cần sửa giao diện.
 
 ### DOCX
 
@@ -83,11 +83,11 @@ flowchart LR
 
 - **Frontend:** Next.js, React, TypeScript.
 - **Backend:** NestJS, TypeORM; API REST.
-- **Cơ sở dữ liệu:** PostgreSQL; migration tạo cấu trúc bảng và tài khoản Demo User khi backend khởi động.
+- **Cơ sở dữ liệu:** PostgreSQL. Backend tự chạy migration và tạo tài khoản Demo User khi khởi động lần đầu.
 - **Tạo file:** `docx`, `pptxgenjs`; JSZip xử lý placeholder trong gói Office Open XML.
 - **Lưu trữ:** mẫu và file tạo ra ở các thư mục riêng; Docker Compose dùng volume để giữ dữ liệu.
 
-Chi tiết endpoint, ví dụ request và mô hình `Template` – `Document` – `User`: [docs/API.md](docs/API.md). Danh sách mẫu, placeholder và cách đăng ký mẫu mới: [docs/template-manifest.md](docs/template-manifest.md).
+Danh sách API, ví dụ request và mô hình `Template` – `Document` – `User` nằm trong [docs/API.md](docs/API.md). Cách đăng ký mẫu và các trường có thể điền được mô tả trong [docs/template-manifest.md](docs/template-manifest.md).
 
 ## Kiểm tra code
 
@@ -100,24 +100,12 @@ npm test
 npm run build
 ```
 
-Test backend kiểm tra upload Office, placeholder, XML, bảo toàn file nguồn, sao chép PPTX, metadata và lỗi tải file. Test đơn vị không cần PostgreSQL; kiểm tra tích hợp database cần chạy riêng.
+Test backend bao phủ upload Office, thay placeholder, xử lý XML, giữ nguyên file mẫu, sao chép PPTX, lưu metadata và tải file. Các test đơn vị không cần PostgreSQL; kiểm tra database cần một môi trường PostgreSQL riêng.
 
 ## Giới hạn cần biết
 
-- Ứng dụng dùng chung một Demo User; **chưa có đăng nhập hay cách ly dữ liệu giữa nhiều người dùng**.
+- Mọi tài liệu hiện được gắn với một Demo User; **chưa có đăng nhập hay dữ liệu riêng cho từng người dùng**.
 - DOCX sửa được các trường do template định nghĩa, chưa phải trình soạn thảo Word tự do.
 - Chưa có trình sửa slide tích hợp. Có thể sửa file PPTX đã tải bằng PowerPoint hoặc ứng dụng tương thích.
-- Preview được tái dựng từ dữ liệu bên trong DOCX/PPTX, không phải ảnh render nguyên bản; cách xuống dòng, font và hiệu ứng có thể khác ứng dụng Office.
-- Tệp tải lên được kiểm tra định dạng và cấu trúc gói Office; bước này không thay thế phần mềm quét mã độc.
-
-## Tài liệu và bàn giao
-
-- [Chạy thử cho người mới](docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md)
-- [Triển khai Ubuntu VPS](docs/DEPLOYMENT-UBUNTU.md)
-- [API và mô hình dữ liệu](docs/API.md)
-- [Bảo mật và giới hạn](docs/SECURITY.md)
-- [Checklist bàn giao](docs/HANDOVER.md)
-
-Khi gửi bài, đính kèm video quay màn hình theo yêu cầu của nhà tuyển dụng. Video không nằm trong repository.
-
-Các thư viện chính và giấy phép được liệt kê trong [docs/API.md](docs/API.md). Tôi có sử dụng OpenAI Codex để hỗ trợ viết và rà soát code, tài liệu, cũng như kiểm tra một số luồng của ứng dụng.
+- Bản xem trước được tạo từ dữ liệu trong DOCX/PPTX, không phải ảnh chụp trực tiếp từ Office. Cách xuống dòng, phông chữ và hiệu ứng có thể hiển thị khác.
+- Tệp tải lên được kiểm tra định dạng và cấu trúc Office. Việc kiểm tra này không thay thế công cụ quét mã độc.
