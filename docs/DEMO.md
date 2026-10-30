@@ -2,10 +2,12 @@
 
 ## Chuẩn bị
 
-1. Tạo `.env`, `backend/.env` và `frontend/.env.local` theo các file `.env.example` trong repository.
-2. Khởi động PostgreSQL bằng `docker compose up -d postgres`.
-3. Chạy `npm run dev:backend` và `npm run dev:frontend` ở hai terminal. Khi backend khởi động, migration được chạy và manifest được đồng bộ vào PostgreSQL.
-4. Mở <http://localhost:3000>.
+1. Cài Docker Desktop hoặc Docker Engine có Docker Compose.
+2. Tại thư mục gốc repository, chạy `docker compose up --build`. Lần đầu chạy cần Internet để tải image và cài dependency trong quá trình build.
+3. Chờ PostgreSQL, backend và frontend khởi động. Backend tự chạy migration và đồng bộ manifest vào PostgreSQL.
+4. Mở <http://localhost:3000>. API ở <http://localhost:3001>.
+
+Để dừng, nhấn `Ctrl+C`. Có thể dùng `docker compose down` để dừng container mà vẫn giữ dữ liệu; tránh `docker compose down -v` nếu cần giữ database và các tệp đã tạo.
 
 ## Luồng demo
 
@@ -21,7 +23,7 @@
 10. Khởi động lại backend rồi tìm mẫu vừa tải lên để kiểm tra metadata vẫn được giữ trong cơ sở dữ liệu.
 11. So sánh file mẫu trong `storage/templates` với bản tải xuống để xác nhận mẫu gốc không bị sửa.
 
-## Response tạo file mẫu
+## Phản hồi mẫu khi tạo file
 
 ```json
 {

@@ -16,14 +16,36 @@ backend/src/                  API NestJS, entity, migration và service TypeORM
 scripts/generate-templates/   Script sinh và kiểm tra mẫu Office
 storage/templates/            5 DOCX, 3 PPTX và manifest.json
 storage/generated/            Các tệp được tạo theo từng yêu cầu
-docker-compose.yml            PostgreSQL, health check và volume lưu dữ liệu
+docker-compose.yml            Frontend, backend, PostgreSQL và volume lưu dữ liệu
 ```
 
 ## Yêu cầu và cài đặt
 
-- Node.js 22.12 trở lên, npm 10 trở lên.
-- Python 3 để chạy validator Office Open XML.
-- Docker Compose để chạy PostgreSQL.
+### Cách nhanh: chạy toàn bộ ứng dụng bằng Docker
+
+Đây là cách thuận tiện để người đánh giá chạy dự án. Máy chỉ cần cài Docker Desktop hoặc Docker Engine có Docker Compose; không cần tự cài Node.js, npm, Python hay PostgreSQL trên máy host.
+
+Tại thư mục gốc repository, chạy:
+
+```bash
+docker compose up --build
+```
+
+Hướng dẫn từng bước cho người mới trên Windows, gồm cách tải source từ GitHub và khắc phục lỗi thường gặp: [`docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md`](docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md).
+
+Lần đầu chạy, Docker sẽ tải image nền và cài dependency trong lúc build, nên cần Internet và có thể mất vài phút. Khi các dịch vụ đã khởi động:
+
+- Website: <http://localhost:3000>
+- API: <http://localhost:3001/api/templates>
+- Kiểm tra backend: <http://localhost:3001/health>
+
+Nhấn `Ctrl+C` để dừng, rồi có thể chạy lại cùng lệnh. `docker compose down` dừng và xóa container nhưng giữ database và file đã tạo. **Không dùng `docker compose down -v` nếu muốn giữ dữ liệu**, vì `-v` xóa volume database và file đầu ra. Mẫu tải lên được lưu trong `storage/templates` trên máy host.
+
+Port mặc định: frontend `3000`, API `3001`, PostgreSQL `5432`. Để đổi port hoặc mật khẩu database, tạo `.env` từ `.env.example` rồi chỉnh `FRONTEND_PORT`, `API_PORT`, `DB_PORT` hoặc `DB_PASSWORD`. Không đưa `.env` chứa thông tin riêng lên GitHub.
+
+### Cách phát triển trực tiếp trên máy
+
+Yêu cầu Node.js 22.12 trở lên, npm 10 trở lên, Python 3 (cho validator Office Open XML) và Docker Compose (cho PostgreSQL).
 
 Cài dependency tại thư mục gốc:
 
@@ -34,9 +56,9 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 ```
 
-Đặt cùng một giá trị `DB_PASSWORD` khác mặc định trong `.env` gốc (Docker Compose dùng) và `backend/.env` (NestJS dùng). Không đưa các file môi trường chứa bí mật lên Git.
+Đặt cùng một giá trị `DB_PASSWORD` khác mặc định trong `.env` gốc (Docker Compose dùng) và `backend/.env` (NestJS dùng). Không đưa file môi trường có bí mật lên Git.
 
-Khởi động database:
+Khởi động riêng database:
 
 ```bash
 docker compose up -d postgres

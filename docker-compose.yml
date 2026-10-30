@@ -16,5 +16,61 @@ services:
       timeout: 5s
       retries: 10
 
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-change-me}
+      DB_DATABASE: ${DB_DATABASE:-document_templates}
+      CORS_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
+      TEMPLATE_STORAGE_DIR: storage/templates
+      GENERATED_STORAGE_DIR: storage/generated
+      TEMPLATE_UPLOAD_MAX_BYTES: ${TEMPLATE_UPLOAD_MAX_BYTES:-10485760}
+    ports:
+      - "${API_PORT:-3001}:3001"
+    volumes:
+      - ./storage/templates:/app/storage/templates
+      - generated_files:/app/storage/generated
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:${API_PORT:-3001}
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
 volumes:
   postgres_data:
+  generated_files:

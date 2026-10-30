@@ -10,19 +10,13 @@ Tài liệu này đối chiếu các hạng mục bàn giao của bài tuyển d
 
 ## 2. Hướng dẫn cài đặt và chạy thử — ĐÃ CÓ
 
-Xem phần setup trong [`README.md`](../README.md). Các lệnh chính:
+Cách khởi chạy nhanh được ghi trong [`README.md`](../README.md). Hướng dẫn chi tiết cho người chưa quen Git/Docker nằm trong [`HUONG-DAN-CHAY-CHO-NGUOI-MOI.md`](HUONG-DAN-CHAY-CHO-NGUOI-MOI.md). Người đánh giá chỉ cần cài Docker Desktop/Engine có Compose, rồi chạy ở thư mục gốc:
 
 ```bash
-npm install
-cp .env.example .env
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env.local
-docker compose up -d postgres
-npm run dev:backend
-npm run dev:frontend
+docker compose up --build
 ```
 
-Chạy backend và frontend ở hai terminal riêng. Website mặc định ở `http://localhost:3000`, API ở `http://localhost:3001`.
+Lần đầu cần Internet để Docker tải image và dependency. Website ở `http://localhost:3000`, API ở `http://localhost:3001`. Không cần cài Node.js/npm/PostgreSQL trên máy host. Chế độ chạy dev trực tiếp vẫn được hướng dẫn trong README.
 
 ## 3. README kiến trúc và công nghệ — ĐÃ CÓ
 
@@ -54,11 +48,12 @@ Trước khi quay, kiểm tra thông tin cá nhân/đường dẫn nhạy cảm 
 
 ## 7. Trạng thái hoàn thành và giới hạn — ĐÃ CÓ
 
-Các chức năng đã hoàn thành, giới hạn kỹ thuật và hướng phát triển tiếp theo nằm trong mục “Features”, “Known limitations” và “Next implementation steps” của [`README.md`](../README.md). Tóm tắt: DOCX chỉnh sửa theo các trường đã khai báo; PPTX được điền trường và sao chép để chỉnh sửa bằng ứng dụng Office bên ngoài; preview được dựng từ cấu trúc OOXML chứ không phải ảnh render nguyên bản; ứng dụng dùng một Demo User và chưa có xác thực.
+Các chức năng đã hoàn thành, giới hạn kỹ thuật và hướng phát triển tiếp theo nằm trong mục “Chức năng”, “Giới hạn hiện tại” và “Hướng phát triển tiếp theo” của [`README.md`](../README.md). Tóm tắt: DOCX chỉnh sửa theo các trường đã khai báo; PPTX được điền trường và sao chép để chỉnh sửa bằng ứng dụng Office bên ngoài; preview được dựng từ cấu trúc OOXML chứ không phải ảnh render nguyên bản; ứng dụng dùng một Demo User và chưa có xác thực.
 
 ## Trước khi gửi nhà tuyển dụng
 
-- Chạy lại các lệnh build/typecheck/lint/test ghi trong README trên máy của bạn và chỉ nêu kết quả thực tế.
-- Chạy thử cả DOCX/PPTX end-to-end với PostgreSQL đang hoạt động.
+- Chạy `docker compose up --build`, chờ cả ba dịch vụ khởi động rồi mở website.
+- Chạy thử cả DOCX/PPTX end-to-end trong môi trường Docker.
+- Nếu muốn chạy các lệnh build/typecheck/lint/test, làm theo README; chỉ nêu kết quả thực tế.
 - Tự quay video theo `docs/DEMO.md`; xem lại video để bảo đảm thấy rõ các thao tác và file tải xuống.
 - Đính kèm repository/source, README, tài liệu này, manifest và các file template mẫu.
