@@ -115,5 +115,3 @@ Test backend bao phủ upload Office, thay placeholder, xử lý XML, giữ nguy
 - [Hướng dẫn chạy ứng dụng](docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md)
 - [Hướng dẫn triển khai Ubuntu VPS](docs/DEPLOYMENT-UBUNTU.md)
 - [API và mô hình dữ liệu](docs/API.md)
-- [Bảo mật và giới hạn](docs/SECURITY.md)
-- [Checklist bàn giao, tình trạng và giới hạn](docs/HANDOVER.md)
