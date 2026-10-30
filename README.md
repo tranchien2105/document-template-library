@@ -2,6 +2,10 @@
 
 MVP full-stack giúp người dùng tìm kiếm, xem trước và tạo tài liệu DOCX hoặc bản trình chiếu PPTX có thể tải xuống. Giao diện và nội dung của 5 mẫu DOCX, 3 mẫu PPTX đều sử dụng tiếng Việt.
 
+## Bản demo trực tuyến
+
+Trải nghiệm Papertrail tại: [https://papertrail-dev.duckdns.org/](https://papertrail-dev.duckdns.org/).
+
 ## Kiến trúc
 
 - **Frontend:** Next.js App Router, React, TypeScript.
