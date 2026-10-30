@@ -1,105 +1,105 @@
-# Papertrail Security Notes
+# Ghi chú bảo mật Papertrail
 
-This document records the practical safeguards currently implemented for the single-user recruitment demo. It is not a claim that arbitrary Office files are safe or that Papertrail provides production user isolation.
+Tài liệu này ghi lại các biện pháp bảo vệ thực tế đang được triển khai trong bản demo tuyển dụng một người dùng. Tài liệu không khẳng định mọi file Office bất kỳ đều an toàn, cũng không khẳng định Papertrail có khả năng cô lập người dùng như hệ thống production.
 
-## Audit summary
+## Tóm tắt rà soát
 
-| Area | Status | Result |
+| Hạng mục | Trạng thái | Kết quả |
 | --- | --- | --- |
-| SQL injection | PASS | Search, filters, and pagination values are passed as TypeORM parameters; order fields are fixed in code. |
-| Request validation | PARTIAL | Route IDs, query values, metadata, template fields, and upload limits are checked. DTO validation is explicit in services/controllers; a global `ValidationPipe` is not enabled because the current DTOs do not use validation decorators. |
-| Upload package validation | PASS WITH LIMITS | Extension, MIME signal, ZIP structure, size/ratio/count limits, CRC, expected OOXML parts, and relationships are checked. Full OOXML schema validation and malware scanning are not provided. |
-| Filesystem traversal/symlinks | PASS | Paths are constrained to configured roots and canonical paths; output names are UUID based. |
-| Generated downloads | PASS FOR DEMO MODEL | The database record is required, its path must match its UUID and file type, and its filename is sanitized before setting download headers. |
-| User isolation | NOT PROVIDED | All visitors share the unauthenticated Demo User. UUIDs are identifiers, not authorization. |
-| Frontend XSS sinks | PASS BY SOURCE REVIEW | React renders template and document values as text; no `dangerouslySetInnerHTML`, `innerHTML`, or `eval` usage was found in `frontend/src`. |
-| Rendering isolation | NOT APPLICABLE | The application does not invoke LibreOffice or another Office renderer. Slide/document previews are metadata-based illustrations. |
+| SQL injection | ĐẠT | Giá trị tìm kiếm, bộ lọc và phân trang được truyền dưới dạng tham số TypeORM; trường sắp xếp được cố định trong code. |
+| Kiểm tra request | MỘT PHẦN | ID route, query, metadata, trường template và giới hạn upload được kiểm tra. DTO được kiểm tra tường minh trong service/controller; chưa bật `ValidationPipe` toàn cục vì DTO hiện không dùng decorator kiểm tra dữ liệu. |
+| Kiểm tra gói upload | ĐẠT CÓ GIỚI HẠN | Kiểm tra phần mở rộng, tín hiệu MIME, cấu trúc ZIP, giới hạn kích thước/tỷ lệ/số lượng, CRC, thành phần OOXML bắt buộc và relationships. Chưa kiểm tra đầy đủ schema OOXML hoặc quét mã độc. |
+| Path traversal / symlink | ĐẠT | Đường dẫn bị giới hạn trong storage root đã cấu hình và được kiểm tra theo canonical path; tên đầu ra dùng UUID. |
+| Tải file đã tạo | ĐẠT TRONG MÔ HÌNH DEMO | Cần có bản ghi database; đường dẫn phải khớp UUID và loại file; tên file được làm sạch trước khi đưa vào header tải xuống. |
+| Cô lập người dùng | CHƯA CÓ | Mọi khách truy cập dùng chung Demo User không có xác thực. UUID chỉ là mã định danh, không phải cơ chế phân quyền. |
+| Điểm có thể gây XSS ở frontend | ĐẠT QUA RÀ SOÁT SOURCE | React hiển thị tên mẫu và giá trị tài liệu dưới dạng văn bản; không tìm thấy `dangerouslySetInnerHTML`, `innerHTML` hoặc `eval` trong `frontend/src`. |
+| Cô lập công cụ render | KHÔNG ÁP DỤNG | Ứng dụng không chạy LibreOffice hoặc công cụ render Office khác. Preview slide/tài liệu là nội dung minh họa dựa trên metadata. |
 
-## Implemented controls
+## Các biện pháp đã triển khai
 
-- **Upload size and request shape:** The upload interceptor limits a single file and multipart fields. `TEMPLATE_UPLOAD_MAX_BYTES` accepts 1–50 MiB and defaults to 10 MiB. Multer size errors return HTTP 413 without returning internal details.
-- **Office package checks:** `backend/src/common/office-package.ts` inspects ZIP central-directory metadata before JSZip processing. It rejects split/ZIP64 archives, encrypted or unsupported compression methods, duplicate/unsafe paths, symlinks, excessive entries, files larger than 32 MiB expanded, total expansion over 128 MiB, and compression ratios over 200:1. It inflates entries with an output ceiling and verifies actual size and CRC before inspecting the bounded OOXML parts.
-- **OOXML checks and active content:** Uploads must have the correct document/presentation content type, root office-document relationship, main part, and resolvable internal relationships. Macro-enabled declarations, VBA parts, embedded objects, ActiveX, custom UI, external data links, and suspicious executable/script part extensions are rejected. External hyperlinks are limited to HTTP(S) and mailto. These checks are structural safeguards, not a complete Office conformance parser or malware scanner.
-- **MIME handling:** `TemplateService` requires the expected Office MIME type or the generic `application/octet-stream` signal, then validates the package itself. A declared MIME type is not considered proof that a file is safe.
-- **Path and write safety:** `backend/src/common/storage.ts` checks canonical real paths to prevent root escapes through symlinks. New files use exclusive creation (`O_EXCL` and `O_NOFOLLOW` where supported) and restrictive mode `0600`; a collision cannot overwrite or delete a pre-existing file. Template files are never edited during generation.
-- **Output cleanup and download:** DOCX/PPTX output names use UUIDs. A generated file is removed if metadata persistence fails. Download lookup requires a saved record, a canonical UUID, a matching `{documents|presentations}/{id}.{extension}` path, and an existing nonempty file. Download responses set `X-Content-Type-Options: nosniff` and use a sanitized filename.
-- **Database and request handling:** `TemplateService` uses parameterized query-builder filters, fixed sort fields, bounded pagination, allowlisted update fields, and validation of template placeholder values. Internal errors return generic upload/download messages; API response headers include `nosniff`, frame denial, a restrictive referrer policy, and `no-store` caching.
-- **CORS:** `CORS_ORIGIN` is an explicit comma-separated origin list with credentials disabled. A wildcard is rejected when `NODE_ENV=production`. CORS controls browser access only; it is not authentication.
-- **Document ownership:** Document listing, metadata, and downloads are scoped to the server-resolved Demo User when the user repository is configured. Since there is no login or authorization, this does not provide privacy between visitors.
+- **Giới hạn upload và cấu trúc request:** Interceptor giới hạn kích thước file và các trường multipart. `TEMPLATE_UPLOAD_MAX_BYTES` nhận giá trị từ 1–50 MiB, mặc định 10 MiB. Lỗi vượt giới hạn Multer trả HTTP 413 mà không tiết lộ thông tin nội bộ.
+- **Kiểm tra gói Office:** `backend/src/common/office-package.ts` kiểm tra metadata central directory của ZIP trước khi xử lý bằng JSZip. Từ chối archive chia phần/ZIP64, mã hóa hoặc dùng phương thức nén không hỗ trợ, đường dẫn trùng/không an toàn, symlink, quá nhiều entry, file giải nén lớn hơn 32 MiB, tổng dung lượng giải nén trên 128 MiB và tỷ lệ nén trên 200:1. Các entry được giải nén với giới hạn đầu ra; kích thước thực tế và CRC được xác minh trước khi đọc các phần OOXML bị giới hạn.
+- **Kiểm tra OOXML và nội dung chủ động:** File tải lên phải có content type đúng loại tài liệu/trình chiếu, root office-document relationship, main part và các relationship nội bộ có thể phân giải. Từ chối khai báo bật macro, VBA, embedded object, ActiveX, custom UI, liên kết dữ liệu ngoài và phần mở rộng đáng ngờ của file thực thi/script. Hyperlink bên ngoài chỉ chấp nhận HTTP(S) và mailto. Đây là bảo vệ cấu trúc, không phải trình phân tích đầy đủ chuẩn Office hay công cụ quét mã độc.
+- **Kiểm tra MIME:** `TemplateService` yêu cầu MIME tương ứng với loại Office hoặc tín hiệu chung `application/octet-stream`, sau đó vẫn xác minh cấu trúc gói. MIME do client khai báo không được xem là bằng chứng file an toàn.
+- **An toàn đường dẫn và ghi file:** `backend/src/common/storage.ts` kiểm tra real path chuẩn để ngăn thoát khỏi thư mục gốc qua symlink. File mới được tạo ở chế độ độc quyền (`O_EXCL`, `O_NOFOLLOW` nếu hệ thống hỗ trợ) và quyền hạn chế `0600`; va chạm tên không thể ghi đè hoặc xóa file có sẵn. Mẫu gốc không bị chỉnh sửa khi tạo file.
+- **Dọn file đầu ra và tải xuống:** Tên DOCX/PPTX đầu ra dùng UUID. File được tạo sẽ bị xóa nếu lưu metadata thất bại. Tra cứu tải xuống yêu cầu bản ghi đã lưu, UUID canonical, đường dẫn khớp mẫu `{documents|presentations}/{id}.{extension}` và file tồn tại, không rỗng. Phản hồi tải file đặt `X-Content-Type-Options: nosniff` và dùng tên file đã làm sạch.
+- **Database và xử lý request:** `TemplateService` dùng tham số trong query builder, trường sắp xếp cố định, phân trang có giới hạn, allowlist cho trường cập nhật và kiểm tra giá trị placeholder. Lỗi nội bộ trả thông báo upload/tải file chung; response API có các header `nosniff`, chặn frame, chính sách referrer hạn chế và cache `no-store`.
+- **CORS:** `CORS_ORIGIN` là danh sách origin tường minh, phân cách bằng dấu phẩy và tắt credentials. Cấu hình wildcard bị từ chối khi `NODE_ENV=production`. CORS chỉ kiểm soát truy cập từ trình duyệt, không thay thế xác thực.
+- **Quyền sở hữu tài liệu:** Danh sách, metadata và tải xuống được giới hạn theo Demo User do server xác định khi repository người dùng được cấu hình. Do không có đăng nhập hay phân quyền, điều này không tạo ra tính riêng tư giữa các khách truy cập.
 
-## Verification performed
+## Kết quả kiểm tra đã thực hiện
 
-The backend suite validates uploaded DOCX/PPTX packages, rejects an arbitrary ZIP and a high-ratio archive, rejects incorrect MIME and oversized service input, tests the 413 error mapping, checks traversal and symlink escapes, verifies exclusive writes and concurrent independent outputs, ensures source templates remain unchanged, and checks cleanup after metadata persistence failure. It also validates all eight bundled OOXML packages and generation flows.
+Bộ test backend kiểm tra gói DOCX/PPTX tải lên, từ chối ZIP thường và archive có tỷ lệ nén cao, từ chối MIME sai và dữ liệu service vượt giới hạn, kiểm tra ánh xạ lỗi 413, ngăn traversal và symlink escape, xác minh ghi file độc quyền và đầu ra riêng khi có request đồng thời, bảo đảm mẫu nguồn không đổi và dọn file khi lưu metadata thất bại. Bộ test cũng kiểm tra cả 8 gói OOXML đi kèm và các luồng tạo file.
 
-Commands run with the installed Node 24 binary because the system npm is an older npm 6 that recursively invokes the workspace scripts:
+Các lệnh dưới đây đã chạy bằng Node 24 vì npm 6 có sẵn trên hệ thống không tương thích với cách gọi script workspace lồng nhau:
 
 ```text
-NestJS build: PASS
-Backend TypeScript typecheck: PASS
-Backend ESLint source check: PASS
-Backend tests: PASS (24 tests)
-Frontend unsafe HTML/eval source scan: PASS (no matches)
-Database-backed HTTP integration: NOT RUN
-Browser workflow/security interaction: NOT RUN
-Microsoft Office/LibreOffice validation of newly uploaded arbitrary files: NOT RUN
+Build NestJS: ĐẠT
+Typecheck TypeScript backend: ĐẠT
+ESLint backend: ĐẠT
+Test backend: ĐẠT (24 test)
+Quét source frontend tìm HTML/eval không an toàn: ĐẠT (không có kết quả)
+Kiểm thử HTTP tích hợp với database: CHƯA CHẠY
+Kiểm thử luồng tương tác trên trình duyệt: CHƯA CHẠY
+Kiểm thử file upload tùy ý bằng Microsoft Office/LibreOffice: CHƯA CHẠY
 ```
 
-## Remaining risks and limitations
+## Rủi ro và giới hạn còn lại
 
-- Upload, template edit/delete, document metadata, and download routes are unauthenticated. The management endpoints must be protected before public deployment.
-- Every browser visitor sees the same Demo User documents. The Demo User association is demo bookkeeping, not authorization or tenant isolation.
-- Office validation covers ZIP structure, bounded decompression, key content types, and relationships; it does not implement every OOXML schema rule and does not scan for malware. Do not accept arbitrary public uploads without isolated scanning/processing.
-- Uploaded content is held in memory up to the configured limit. Rate limiting and concurrent-upload resource quotas are not implemented.
-- Storage checks reduce symlink/path escapes, but they are not a hardened multi-tenant storage boundary against an attacker with operating-system access to the server account or storage directories.
-- The frontend does not render uploaded HTML. It displays text/metadata using React escaping; Office previews are not actual rendered pages.
-- `synchronize` remains disabled. Database schema changes continue to use migrations.
+- API upload, sửa/xóa mẫu, metadata tài liệu và tải file chưa yêu cầu đăng nhập. Phải bảo vệ các endpoint quản lý trước khi triển khai công khai.
+- Mọi khách truy cập đều thấy tài liệu của cùng Demo User. Gán Demo User chỉ phục vụ demo, không phải phân quyền hoặc cô lập tenant.
+- Kiểm tra Office bao phủ cấu trúc ZIP, giải nén có giới hạn, content type và relationships chính; chưa triển khai mọi quy tắc schema OOXML và không quét mã độc. Không nhận upload công khai tùy ý nếu thiếu bước quét/xử lý cô lập.
+- Nội dung upload được giữ trong bộ nhớ đến giới hạn cấu hình. Chưa có rate limit hoặc quota tài nguyên cho upload đồng thời.
+- Kiểm tra storage giúp giảm nguy cơ symlink/path escape, nhưng không phải ranh giới lưu trữ đa tenant được gia cố chống lại kẻ tấn công có quyền truy cập hệ điều hành vào tài khoản chạy server hoặc thư mục storage.
+- Frontend không render HTML tải lên. Nội dung được hiển thị dạng text qua cơ chế escape của React; preview Office không phải trang đã render thực tế.
+- `synchronize` vẫn tắt. Thay đổi schema database tiếp tục được quản lý bằng migration.
 
-## How to explain Papertrail security in a technical interview
+## Cách giải thích bảo mật Papertrail trong phỏng vấn kỹ thuật
 
-### 1. Preventing ZIP bombs and malformed Office uploads
+### 1. Ngăn ZIP bomb và file Office lỗi cấu trúc
 
-- **Threat:** A small compressed upload expands to huge data, contains invalid OOXML, or disguises a non-Office archive with a `.docx`/`.pptx` extension.
-- **Implementation:** `backend/src/common/office-package.ts` (`preflightZip`, `validateOfficeArchive`, `loadValidatedOfficePackage`) and `TemplateService.uploadDocumentTemplate` / `uploadPresentationTemplate`.
-- **How it works:** It checks ZIP headers and central-directory metadata, enforces entry/expanded-size/compression-ratio limits, inflates each entry with an output bound, verifies size and CRC, and confirms key OOXML parts and relationships.
-- **Evidence:** Backend tests reject an arbitrary ZIP and a high-ratio archive; bundled five DOCX and three PPTX packages pass the validator.
-- **Limit:** This is not antivirus and not a complete OOXML schema validator.
+- **Nguy cơ:** File nén nhỏ nhưng bung ra dung lượng khổng lồ, OOXML không hợp lệ hoặc archive không phải Office nhưng đổi đuôi thành `.docx`/`.pptx`.
+- **Triển khai:** `backend/src/common/office-package.ts` (`preflightZip`, `validateOfficeArchive`, `loadValidatedOfficePackage`) và `TemplateService.uploadDocumentTemplate` / `uploadPresentationTemplate`.
+- **Cách hoạt động:** Kiểm tra header ZIP và metadata central directory; giới hạn số entry, kích thước giải nén và tỷ lệ nén; giải nén từng entry có giới hạn đầu ra; xác minh kích thước, CRC, các phần OOXML và relationships quan trọng.
+- **Bằng chứng:** Test backend từ chối ZIP thường và archive có tỷ lệ nén cao; 5 DOCX và 3 PPTX đi kèm đều qua validator.
+- **Giới hạn:** Không thay thế antivirus và không xác thực toàn bộ schema OOXML.
 
-### 2. Preventing path traversal and symlink escapes
+### 2. Ngăn path traversal và symlink escape
 
-- **Threat:** A crafted metadata path or symlink causes the server to read or serve files outside template/generated storage.
-- **Implementation:** `backend/src/common/storage.ts` (`safeTemplatePath`, `safeGeneratedPath`, `assertSafeDirectory`).
-- **How it works:** It checks relative paths and canonical real paths against configured storage roots before reads/writes/downloads.
-- **Evidence:** Tests reject traversal paths and a template symlink targeting `/etc/passwd`.
-- **Limit:** A privileged attacker who can modify the server filesystem can still alter the storage environment; this is not an OS sandbox.
+- **Nguy cơ:** Đường dẫn metadata hoặc symlink có chủ ý khiến server đọc/trả file nằm ngoài thư mục template hoặc generated.
+- **Triển khai:** `backend/src/common/storage.ts` (`safeTemplatePath`, `safeGeneratedPath`, `assertSafeDirectory`).
+- **Cách hoạt động:** Kiểm tra đường dẫn tương đối và real path chuẩn so với storage root đã cấu hình trước khi đọc, ghi hoặc tải file.
+- **Bằng chứng:** Test từ chối đường dẫn traversal và symlink mẫu trỏ tới `/etc/passwd`.
+- **Giới hạn:** Kẻ tấn công có quyền sửa filesystem của server vẫn có thể thay đổi môi trường lưu trữ; đây không phải sandbox hệ điều hành.
 
-### 3. Preventing output overwrite and request collisions
+### 3. Ngăn ghi đè đầu ra và va chạm request
 
-- **Threat:** Two generations collide or a guessed output path overwrites an existing file.
-- **Implementation:** `backend/src/common/storage.ts` (`writeNewFile`) and `TemplateService.createDocument` / `copyPresentation`.
-- **How it works:** Each request gets a UUID path and the file is opened exclusively with no-follow behavior where supported. Persistence failure removes only the file created by that request.
-- **Evidence:** An automated test confirms an existing file is not overwritten; generation tests confirm original templates remain unchanged and DB failure removes the output.
-- **Limit:** Storage permissions and disk quotas still need operational management.
+- **Nguy cơ:** Hai lần tạo file trùng tên hoặc đường dẫn đầu ra đoán được ghi đè file có sẵn.
+- **Triển khai:** `backend/src/common/storage.ts` (`writeNewFile`) và `TemplateService.createDocument` / `copyPresentation`.
+- **Cách hoạt động:** Mỗi request dùng đường dẫn UUID và mở file ở chế độ độc quyền, không theo symlink nếu hệ điều hành hỗ trợ. Nếu lưu database thất bại, chỉ xóa file do request đó vừa tạo.
+- **Bằng chứng:** Test tự động xác nhận file hiện có không bị ghi đè; test tạo file xác nhận mẫu gốc không đổi và file đầu ra bị dọn khi ghi database lỗi.
+- **Giới hạn:** Quyền truy cập storage và hạn ngạch ổ đĩa vẫn cần được vận hành phù hợp.
 
-### 4. Preventing unsafe file downloads
+### 4. Ngăn tải xuống file tùy ý
 
-- **Threat:** A caller supplies a path or manipulates metadata to retrieve server files, or a response is interpreted as active content.
-- **Implementation:** `TemplateService.file`, `DocumentsService.getForDownload`, and `GeneratedFileController.download`.
-- **How it works:** The UUID resolves through a saved record; the path must exactly match the UUID/type convention; the file must exist; filenames are sanitized; `nosniff` is set.
-- **Evidence:** Tests cover missing records/files, public metadata omissions, and valid generated-file types.
-- **Limit:** Without authentication, any visitor can request a known/obtained Demo User document ID.
+- **Nguy cơ:** Client truyền đường dẫn hoặc sửa metadata để lấy file khác trên server, hoặc response bị trình duyệt hiểu thành nội dung chủ động.
+- **Triển khai:** `TemplateService.file`, `DocumentsService.getForDownload` và `GeneratedFileController.download`.
+- **Cách hoạt động:** UUID được tra qua bản ghi đã lưu; đường dẫn phải khớp chính xác quy ước UUID/loại file; file phải tồn tại; tên file được làm sạch; response đặt `nosniff`.
+- **Bằng chứng:** Test bao phủ bản ghi/file không tồn tại, lọc trường metadata công khai và loại file sinh hợp lệ.
+- **Giới hạn:** Không có xác thực nên khách truy cập biết hoặc lấy được UUID tài liệu Demo User vẫn có thể yêu cầu tải file.
 
-### 5. Preventing SQL injection and unsafe field substitution
+### 5. Ngăn SQL injection và thay placeholder không an toàn
 
-- **Threat:** Search/filter input changes SQL structure or injected document text corrupts OOXML.
-- **Implementation:** `TemplateService.list`, `validateTemplateValues`, `replaceDocxPlaceholders`, and `replacePptxPlaceholders`.
-- **How it works:** Query values use TypeORM parameters; sorting is fixed; only template-declared fields are accepted; XML-invalid characters are rejected and XML special characters are escaped.
-- **Evidence:** Existing tests check combined filtering, invalid queries/fields, XML escaping, and split-run placeholder replacement.
-- **Limit:** Future query/sort features must retain parameterization and allowlists.
+- **Nguy cơ:** Đầu vào tìm kiếm/bộ lọc làm thay đổi cấu trúc SQL hoặc văn bản chèn vào tài liệu làm hỏng OOXML.
+- **Triển khai:** `TemplateService.list`, `validateTemplateValues`, `replaceDocxPlaceholders` và `replacePptxPlaceholders`.
+- **Cách hoạt động:** Query dùng tham số TypeORM; sắp xếp được cố định; chỉ nhận trường đã khai báo trong template; ký tự không hợp lệ trong XML bị từ chối và ký tự đặc biệt XML được escape.
+- **Bằng chứng:** Test hiện có kiểm tra lọc kết hợp, query/trường không hợp lệ, XML escaping và placeholder bị chia qua nhiều run.
+- **Giới hạn:** Các tính năng query/sort bổ sung sau này cần tiếp tục dùng tham số và allowlist.
 
-### 6. Explaining the Demo User limitation
+### 6. Giải thích giới hạn của Demo User
 
-- **Threat:** Mistaking a shared demo identity or random UUID for real user authorization.
-- **Implementation:** `DocumentsService` resolves the Demo User server-side and scopes records to that user, but there is no authentication module.
-- **How it works:** The browser cannot select an arbitrary owner, but all unauthenticated visitors share this same demo owner.
-- **Evidence:** Unit tests verify server-side assignment and list scoping.
-- **Limit:** Add authentication and authorization on every document and management route before production or public deployment.
+- **Nguy cơ:** Nhầm danh tính demo dùng chung hoặc UUID ngẫu nhiên với cơ chế xác thực/phân quyền thật.
+- **Triển khai:** `DocumentsService` phân giải Demo User ở server và giới hạn bản ghi theo user đó; ứng dụng chưa có module xác thực.
+- **Cách hoạt động:** Trình duyệt không thể chọn chủ sở hữu tùy ý, nhưng mọi khách truy cập chưa xác thực vẫn dùng chung danh tính demo này.
+- **Bằng chứng:** Unit test xác minh server gán chủ sở hữu và giới hạn danh sách theo user.
+- **Giới hạn:** Cần thêm xác thực và phân quyền trên mọi endpoint tài liệu/quản lý trước khi chạy production hoặc công khai.
