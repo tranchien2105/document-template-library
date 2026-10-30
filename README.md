@@ -109,3 +109,15 @@ Test backend bao phủ upload Office, thay placeholder, xử lý XML, giữ nguy
 - Chưa có trình sửa slide tích hợp. Có thể sửa file PPTX đã tải bằng PowerPoint hoặc ứng dụng tương thích.
 - Bản xem trước được tạo từ dữ liệu trong DOCX/PPTX, không phải ảnh chụp trực tiếp từ Office. Cách xuống dòng, phông chữ và hiệu ứng có thể hiển thị khác.
 - Tệp tải lên được kiểm tra định dạng và cấu trúc Office. Việc kiểm tra này không thay thế công cụ quét mã độc.
+
+## Tài liệu và bàn giao
+
+- [Hướng dẫn chạy ứng dụng](docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md)
+- [Hướng dẫn triển khai Ubuntu VPS](docs/DEPLOYMENT-UBUNTU.md)
+- [API và mô hình dữ liệu](docs/API.md)
+- [Bảo mật và giới hạn](docs/SECURITY.md)
+- [Checklist bàn giao](docs/HANDOVER.md)
+
+Khi gửi bài, gửi kèm video quay màn hình theo yêu cầu của nhà tuyển dụng. Video được gửi riêng, không lưu trong repository.
+
+Thông tin thư viện và giấy phép được ghi trong [docs/API.md](docs/API.md). OpenAI Codex đã được sử dụng để hỗ trợ quá trình phát triển và rà soát dự án.
