@@ -1,127 +1,182 @@
-# Thư viện Mẫu Tài liệu
+# Papertrail — Thư viện mẫu tài liệu
 
-Dự án khởi tạo cho bài kiểm tra Lập trình viên Fullstack. Giai đoạn 1 cung cấp mã nguồn nền Next.js/NestJS, cấu hình PostgreSQL/TypeORM và bộ sinh 5 mẫu DOCX cùng 3 mẫu PPTX. Giao diện thư viện hoàn chỉnh, API nghiệp vụ, thực thể cơ sở dữ liệu và trình chỉnh sửa chưa nằm trong phạm vi hiện tại.
+MVP full-stack giúp người dùng tìm kiếm, xem trước và tạo tài liệu DOCX hoặc bản trình chiếu PPTX có thể tải xuống. Giao diện và nội dung của 5 mẫu DOCX, 3 mẫu PPTX đều sử dụng tiếng Việt.
 
-## Công nghệ
+## Kiến trúc
 
-- Giao diện: Next.js App Router, React, TypeScript.
-- Máy chủ: NestJS, TypeScript; điểm kiểm tra hoạt động tại `GET /health`.
-- Cơ sở dữ liệu: PostgreSQL, TypeORM; bật kết nối bằng `DATABASE_ENABLED=true`.
-- Sinh file: `docx` tạo Word OOXML; `pptxgenjs` tạo PowerPoint OOXML.
-- Quản lý gói: npm workspaces.
-
-## Cấu trúc
+- **Frontend:** Next.js App Router, React, TypeScript.
+- **Backend/API:** NestJS, TypeScript, TypeORM.
+- **Cơ sở dữ liệu:** PostgreSQL; manifest là nguồn dữ liệu chuẩn ban đầu cho 8 mẫu.
+- **Lưu trữ:** mẫu Office trong `storage/templates`; tệp đầu ra riêng trong `storage/generated`.
+- **Xử lý tài liệu:** `docx`, `pptxgenjs`; JSZip thay placeholder DOCX trong OOXML và giữ định dạng gốc.
 
 ```text
-document-template-library/
-├── frontend/                       # Ứng dụng nền Next.js
-├── backend/                        # Ứng dụng nền NestJS và điểm kiểm tra
-├── storage/templates/
-│   ├── documents/                  # Các file .docx được sinh
-│   ├── presentations/              # Các file .pptx được sinh
-│   └── manifest.json               # Metadata và dữ liệu xem trước
-├── scripts/generate-templates/     # Script sinh mẫu, tách biệt với máy chủ
-├── docs/                           # Hướng dẫn và ghi chú kỹ thuật
-├── .gitignore
-└── package.json                    # npm workspaces và lệnh chung
+frontend/                     Thư viện, trang chi tiết, tài liệu đã tạo và quản lý mẫu
+backend/src/                  API NestJS, entity, migration và service TypeORM
+scripts/generate-templates/   Script sinh và kiểm tra mẫu Office
+storage/templates/            5 DOCX, 3 PPTX và manifest.json
+storage/generated/            Các tệp được tạo theo từng yêu cầu
+docker-compose.yml            PostgreSQL, health check và volume lưu dữ liệu
 ```
 
-## Yêu cầu môi trường
+## Yêu cầu và cài đặt
 
-- Node.js 22.12 trở lên (khuyến nghị Node.js 22 LTS hiện hành).
-- npm 10 trở lên.
-- PostgreSQL chỉ cần khi muốn thử kết nối cơ sở dữ liệu; mặc định máy chủ không kết nối DB.
+- Node.js 22.12 trở lên, npm 10 trở lên.
+- Python 3 để chạy validator Office Open XML.
+- Docker Compose để chạy PostgreSQL.
 
-## Cài đặt
-
-Từ thư mục `document-template-library`:
+Cài dependency tại thư mục gốc:
 
 ```bash
 npm install
-```
-
-Tạo tệp cấu hình môi trường nếu cần:
-
-```bash
+cp .env.example .env
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env.local
 ```
 
-Không đưa file `.env` thật lên Git. `DATABASE_ENABLED` mặc định là `false`; để chuẩn bị thử PostgreSQL, đặt `DATABASE_ENABLED=true` và cập nhật các biến `DB_*`. Cấu hình TypeORM tắt `synchronize` để tránh tự sửa schema.
+Đặt cùng một giá trị `DB_PASSWORD` khác mặc định trong `.env` gốc (Docker Compose dùng) và `backend/.env` (NestJS dùng). Không đưa các file môi trường chứa bí mật lên Git.
 
-## Sinh bộ template
+Khởi động database:
+
+```bash
+docker compose up -d postgres
+docker compose ps
+```
+
+Khi backend khởi động, TypeORM chạy các migration bổ sung (đã tắt `synchronize`), rồi đồng bộ dữ liệu mẫu từ `storage/templates/manifest.json`. Việc đồng bộ kiểm tra ID, slug, metadata, đường dẫn được phép, phần mở rộng và sự tồn tại của file. Mẫu đóng gói được cập nhật theo ID số nguyên ổn định; mẫu đã tải lên trong `uploads/` vẫn được giữ. Migration gán tài liệu hiện có cho Demo User được seed. Để khởi tạo database trống, hãy dùng named volume mới; **xóa volume sẽ xóa dữ liệu bên trong**.
+
+Sinh lại các file Office và manifest:
 
 ```bash
 npm run templates:generate
 ```
 
-Có thể chạy lại lệnh này; script tạo lại 8 tệp mẫu và cập nhật các mục ID tương ứng trong manifest, đồng thời giữ lại các mục khác. Kết quả thành công hoặc lỗi được thông báo riêng cho từng tệp.
-
-Các file đầu ra:
-
-| Loại | Tên file |
-| --- | --- |
-| Word | `business-report.docx` |
-| Word | `resume.docx` |
-| Word | `leave-request.docx` |
-| Word | `meeting-minutes.docx` |
-| Word | `project-proposal.docx` |
-| PowerPoint | `company-intro.pptx` |
-| PowerPoint | `business-review.pptx` |
-| PowerPoint | `project-plan.pptx` |
-
-Tệp Word lưu tại `storage/templates/documents/`, PowerPoint lưu tại `storage/templates/presentations/`. Metadata nằm ở `storage/templates/manifest.json`; ID là số nguyên ổn định (1–8). `thumbnailPath` hiện là `null`; manifest có dàn ý và tiêu đề slide để giao diện hiển thị bản xem trước dạng văn bản.
-
-## Chạy ứng dụng
-
-Chạy trong hai cửa sổ dòng lệnh từ thư mục dự án:
+Chỉ sinh lại 5 DOCX, giữ nguyên PPTX:
 
 ```bash
-npm run dev:frontend
-npm run dev:backend
+npm run templates:generate:documents
 ```
 
-- Giao diện: <http://localhost:3000>
-- Máy chủ: <http://localhost:3001/health>
+Chỉ sinh lại 3 PPTX cùng metadata trường chỉnh sửa:
 
-Đây là trang khởi tạo tối giản; chưa có giao diện quản lý mẫu. Máy chủ hiện chỉ có điểm kiểm tra hoạt động, chưa có API quản lý mẫu hay nghiệp vụ tài liệu.
+```bash
+npm run templates:generate -- --presentations-only
+```
 
-Các lệnh kiểm tra:
+Các lệnh sinh mẫu chạy `scripts/generate-templates/build-previews.py` để dựng metadata xem trước từ gói Office và đồng bộ màu các mẫu với Papertrail, sau đó chạy `scripts/generate-templates/validate-office.py`. Validator kiểm tra ZIP, XML, content type, relationship và ID, numbering của Word, số slide, placeholder PPTX và tính nhất quán manifest. Nếu cài LibreOffice, script còn chuyển các mẫu sang PDF ở chế độ headless để kiểm tra tương thích độc lập.
+
+Chạy backend và frontend ở hai terminal riêng:
+
+```bash
+npm run dev:backend
+npm run dev:frontend
+```
+
+- Website: <http://localhost:3000>
+- Health check: <http://localhost:3001/health>
+- API: <http://localhost:3001/api/templates>
+
+Backend đọc `backend/.env`; trình duyệt đọc `frontend/.env.local`. Đặt `NEXT_PUBLIC_API_BASE_URL` nếu API ở địa chỉ khác. Cấu hình origin frontend được phép qua `CORS_ORIGIN` trong backend; nhiều origin phân tách bằng dấu phẩy.
+
+## Chức năng
+
+- Tìm kiếm, lọc mẫu theo loại và danh mục; kết quả phân trang lấy từ PostgreSQL.
+- Tìm kiếm tiếng Việt xét cả slug và nội dung preview. Tên, mô tả, danh mục và nhãn form được hiển thị bằng tiếng Việt.
+- Trang chi tiết dựng lại đoạn văn, tiêu đề, danh sách, bảng và placeholder DOCX từ `word/document.xml`. PPTX preview đọc shape, văn bản, vị trí và màu từ gói trình chiếu. Sửa trường sẽ cập nhật nội dung preview liên quan.
+- Trường DOCX lấy từ placeholder trong metadata manifest. Backend kiểm tra khóa và độ dài; thay token trong XML tài liệu, header, footer, kể cả khi token bị chia qua nhiều Word run; sau đó tạo DOCX riêng.
+- Tạo PPTX kiểm tra và thay placeholder slide đã khai báo, lưu giá trị gửi lên, không sửa bản nguồn.
+- Metadata file được tạo lưu trong PostgreSQL. `GET /api/documents/:uuid` trả metadata công khai, không trả đường dẫn hệ thống hoặc giá trị form.
+- File thuộc về `Demo User` (`demo@papertrail.local`) do server xác định; client không chọn chủ sở hữu. Trang “Tài liệu của tôi” đọc danh sách từ PostgreSQL và tải được file thật.
+- Trang “Quản lý mẫu” hỗ trợ tải DOCX/PPTX lên. API kiểm tra gói Office, trích trường DOCX hoặc tiêu đề slide và placeholder PPTX (kể cả token tách giữa các text run), lưu riêng file nguồn và giữ mẫu sau khi backend khởi động lại. PPTX cũ thiếu metadata trường được bổ sung từ file nguồn khi mở hoặc tạo bản sao.
+- `PATCH /api/templates/:id` sửa metadata; `DELETE /api/templates/:id` ngừng kích hoạt mẫu mà không xóa file nguồn.
+- Tải xuống dùng UUID do server sinh, không dùng đường dẫn filesystem do client cung cấp.
+- Thay đổi schema dùng migration tường minh; không bật đồng bộ schema có thể phá hủy dữ liệu.
+
+## API
+
+| Phương thức | Đường dẫn | Chức năng |
+| --- | --- | --- |
+| `GET` | `/health` | Kiểm tra trạng thái API |
+| `GET` | `/api/templates?type=document&category=Kinh%20doanh&search=báo%20cáo&page=1&limit=12` | Tìm kiếm, lọc, phân trang |
+| `GET` | `/api/templates/categories` | Lấy danh mục đang hoạt động |
+| `GET` | `/api/templates/:id` | Metadata và trường preview của mẫu |
+| `GET` | `/api/templates/:id/preview` | Metadata dàn ý hoặc slide preview |
+| `POST` | `/api/templates` | Tải DOCX bằng multipart `file`, `name`, `description`, `category` (tối đa 10 MB) |
+| `POST` | `/api/templates/presentations` | Tải PPTX bằng `multipart/form-data`: `file`, `name`, `description`, `category` |
+| `POST` | `/api/templates/:id/documents` | Tạo DOCX, JSON `{ "values": { "cong_ty_ten": "..." } }` |
+| `POST` | `/api/templates/:id/copies` | Tạo bản sao PPTX, JSON tùy chọn `{ "values": { "field_key": "..." } }` |
+| `GET` | `/api/documents/:uuid` | Lấy metadata công khai của file đã tạo |
+| `GET` | `/api/documents` | Liệt kê file của người dùng demo |
+| `GET` | `/api/files/:uuid` | Tải file đã tạo |
+| `PATCH` | `/api/templates/:id` | Sửa `name`, `description` hoặc `category` |
+| `DELETE` | `/api/templates/:id` | Ngừng kích hoạt mẫu, giữ file nguồn |
+
+API danh sách trả `{ items, meta: { page, limit, total, totalPages } }`. API tạo file trả `{ id, fileName, downloadUrl }`. ID mẫu không tồn tại trả 404; đầu vào không hợp lệ trả 400. Bản ghi lưu mẫu, tên hiển thị, loại/tên file, đường dẫn tương đối và giá trị trường đã kiểm tra. Metadata công khai không chứa đường dẫn lưu trữ hay giá trị form. File đầu ra nằm trong `storage/generated/documents` và `storage/generated/presentations`.
+
+Ví dụ tạo DOCX bằng các khóa trong `preview.fields` của mẫu:
+
+```bash
+curl -X POST http://localhost:3001/api/templates/3/documents \
+  -H 'Content-Type: application/json' \
+  -d '{"values":{"nhan_vien_ten":"Nguyễn Minh An","phong_ban":"Sản phẩm","nghi_phep_bat_dau_ngay":"02/11/2026","nghi_phep_ket_thuc_ngay":"03/11/2026","nghi_phep_ly_do":"Giải quyết việc gia đình"}}'
+```
+
+Ví dụ tạo PPTX và xem metadata đã lưu:
+
+```bash
+curl -X POST http://localhost:3001/api/templates/6/copies \
+  -H 'Content-Type: application/json' \
+  -d '{"values":{"cong_ty_ten":"Công ty Minh An","lien_he_email":"lienhe@example.com"}}'
+curl http://localhost:3001/api/documents/<uuid-nhan-duoc>
+```
+
+`User` và `Template` dùng ID số nguyên; MVP seed một Demo User cố định. `Document` dùng UUID, tham chiếu `Template.id` và `User.id`, lưu metadata file cùng giá trị trường đã kiểm tra dưới dạng JSONB. Metadata công khai trả URL tải nhưng không trả đường dẫn file hoặc giá trị form.
+
+Mở <http://localhost:3000/documents> để xem file đã tạo; mở <http://localhost:3000/manage-templates> để thêm DOCX hoặc PPTX. DOCX tải lên cần ít nhất một placeholder văn bản Word dạng `{{field_name}}`. Placeholder PPTX cùng định dạng được trích theo slide, hiển thị thành trường chỉnh sửa ở trang chi tiết và được thay trong bản sao khi gửi.
+
+## Danh mục mẫu
+
+**DOCX:** `business-report.docx`, `resume.docx`, `leave-request.docx`, `meeting-minutes.docx`, `project-proposal.docx`.
+
+**PPTX:** `company-intro.pptx` (6 slide), `business-review.pptx` (6 slide), `project-plan.pptx` (7 slide).
+
+Các mẫu có nội dung và placeholder tiếng Việt. Preview được dựng từ cấu trúc gói Office thật, không phải ảnh chụp pixel-perfect; phân trang Word và font có thể khác tùy ứng dụng. Có thể tải thumbnail PNG, JPG hoặc WebP từ “Quản lý mẫu”. Mẫu không có thumbnail sẽ hiển thị ảnh bìa minh họa có nhãn rõ ràng.
+
+## Build, kiểm tra và test
 
 ```bash
 npm run typecheck
 npm run lint
+npm test
 npm run build
 ```
 
-## Metadata và bản xem trước
+Lệnh test backend build backend rồi chạy Node test runner. Test bao gồm thay placeholder DOCX bị chia run, escape XML, chặn path traversal, kiểm tra 8 gói Office Open XML, kiểm tra placeholder, bảo toàn file nguồn, lưu metadata, dọn file khi lưu metadata thất bại và lọc metadata công khai. Kiểm tra API với PostgreSQL cần database đang chạy; repository chưa có container riêng cho test tích hợp database.
 
-Manifest là danh sách dữ liệu, không phụ thuộc vào một thành phần giao diện cụ thể. Để thêm mẫu, bổ sung định nghĩa và nội dung trong `scripts/generate-templates/generate.mjs`; script sẽ sinh tệp và thêm hoặc cập nhật metadata. Cấu trúc được mô tả trong [docs/template-manifest.md](docs/template-manifest.md).
+Kịch bản demo nhà tuyển dụng: [`docs/DEMO.md`](docs/DEMO.md). Checklist bàn giao, gồm các bước tự quay video: [`docs/HANDOVER.md`](docs/HANDOVER.md).
 
-Môi trường thực hiện không có LibreOffice/soffice để chuyển DOCX/PPTX thành ảnh; vì vậy không tạo hình thu nhỏ giả. Có thể bổ sung công cụ chuyển đổi ở giai đoạn sau và lưu ảnh thật cạnh tệp mẫu.
+## Giới hạn hiện tại
 
-## Giới hạn hiện tại và giai đoạn tiếp theo
+- Ứng dụng dùng một Demo User, chưa có xác thực/phân quyền. Trước khi triển khai thực tế cần xác thực và kiểm tra quyền sở hữu trước khi cho truy cập metadata hoặc tải file.
+- Trình soạn DOCX chỉ sửa các trường được định nghĩa trong mẫu, không phải trình soạn thảo Word đầy đủ.
+- PPTX hỗ trợ thay trường văn bản đã khai báo, chưa có trình chỉnh sửa slide tự do. Trang chi tiết preview các trường được hỗ trợ theo slide.
+- Preview dựng nội dung và thuộc tính bố cục từ OOXML, không nhúng renderer của Word/PowerPoint; phân trang, kích thước chữ và hiệu ứng có thể khác.
+- Giá trị trường DOCX/PPTX lưu cùng metadata file cho mục đích demo; API công khai không trả các giá trị này. Khách truy cập chưa xác thực dùng chung danh sách tài liệu của Demo User.
+- Kiểm tra upload gồm phần mở rộng, MIME khai báo, giới hạn central directory ZIP, CRC, OOXML bắt buộc và quan hệ nội bộ. Macro và nội dung chủ động nhúng bị từ chối. `TEMPLATE_UPLOAD_MAX_BYTES` cấu hình giới hạn upload (mặc định 10 MiB; chấp nhận 1–50 MiB). Đây không phải antivirus hoặc xác thực OOXML đầy đủ. Chi tiết và bằng chứng test: [`docs/SECURITY.md`](docs/SECURITY.md).
+- Đường dẫn được giới hạn trong storage root; tên file do server sinh và tạo theo chế độ không ghi đè; tải file dựa trên bản ghi UUID. Quản lý mẫu và tài liệu dùng chung chưa có xác thực; không công khai như dịch vụ đa người dùng.
+- Backend không khởi động hoàn chỉnh nếu PostgreSQL không sẵn sàng.
 
-- Chưa có giao diện thư viện mẫu hoàn chỉnh.
-- Chưa có thực thể, migration, dữ liệu khởi tạo hoặc API nghiệp vụ.
-- Chưa có xác thực, tạo bản sao tài liệu hay trình chỉnh sửa.
-- Bản xem trước hiện là dàn ý metadata, không phải ảnh chuyển đổi từ Office.
-- Các trường `{{placeholder}}` trong mẫu là nội dung để người dùng thay thế; chưa có hệ thống tự điền placeholder.
+## Hướng phát triển tiếp theo
 
-Giai đoạn tiếp theo có thể triển khai theo thứ tự: thiết kế thực thể và migration PostgreSQL; API danh sách và chi tiết mẫu; tải tệp mẫu và tạo bản sao; lưu metadata tệp; luồng chỉnh sửa dữ liệu/placeholder và xuất tệp; sau đó xây dựng giao diện và xác thực theo yêu cầu sản phẩm.
+1. Bổ sung test tích hợp PostgreSQL cho lọc, migration, upload và lỗi API.
+2. Tạo thumbnail render bằng LibreOffice trong pipeline build được kiểm soát.
+3. Thêm chính sách lưu giữ và dọn file sinh ra.
+4. Bổ sung xác thực, phân quyền, quét file tải lên và quyền truy cập theo người dùng trước khi triển khai thực tế.
 
-## Thư viện bên thứ ba và giấy phép
+Chi tiết kiểm soát bảo mật, bằng chứng kiểm tra và rủi ro còn lại: [`docs/SECURITY.md`](docs/SECURITY.md).
 
-Các giấy phép dưới đây được đối chiếu với trường `license` trong metadata của các gói đã cài và khóa trong `package-lock.json`; nhóm thư viện chính cũng được đối chiếu trên trang gói npm. Phiên bản cụ thể được ghi trong lockfile:
+## Thư viện bên thứ ba và công khai sử dụng AI
 
-| Giấy phép | Các gói phụ thuộc trực tiếp trong mã nguồn |
-| --- | --- |
-| MIT | `next` 16.4.3, `react`/`react-dom` 19.3.1, `@nestjs/common`, `@nestjs/core`, `@nestjs/platform-express`, `@nestjs/typeorm` (Nest 11), `@nestjs/cli`, `@nestjs/schematics`, `typeorm` 0.3.31, `pg` 8.23.1, `docx` 9.15.0, `pptxgenjs` 4.0.1, `eslint` 9.39.5, `eslint-config-next`, `@eslint/js`, `typescript-eslint`, `@types/node`, `@types/react`, `@types/react-dom`, `@types/express` |
-| Apache-2.0 | `typescript` 5.9.3, `reflect-metadata` 0.2.2, `rxjs` 7.8.2 |
-| BSD-2-Clause | `dotenv` 17.4.2 |
+Phiên bản dependency trực tiếp nằm trong `package-lock.json`. Metadata package đã cài ghi nhận Next.js, React, NestJS, TypeORM, `docx`, `pptxgenjs` và `pg` dùng MIT; TypeScript, RxJS và `reflect-metadata` dùng Apache-2.0; `dotenv` dùng BSD-2-Clause; JSZip có lựa chọn giấy phép `(MIT OR GPL-3.0-or-later)`. Trước khi phân phối thương mại, hãy rà soát điều khoản giấy phép và toàn bộ dependency bắc cầu.
 
-Nguồn gói đã đối chiếu: [Next.js](https://www.npmjs.com/package/next), [React](https://www.npmjs.com/package/react), [React DOM](https://www.npmjs.com/package/react-dom), [NestJS](https://www.npmjs.com/package/%40nestjs/core), [tích hợp NestJS và TypeORM](https://www.npmjs.com/package/%40nestjs/typeorm), [TypeORM](https://www.npmjs.com/package/typeorm), [`pg`](https://www.npmjs.com/package/pg), [`docx`](https://www.npmjs.com/package/docx), [`pptxgenjs`](https://www.npmjs.com/package/pptxgenjs), [TypeScript](https://www.npmjs.com/package/typescript), [`reflect-metadata`](https://www.npmjs.com/package/reflect-metadata), [ESLint](https://www.npmjs.com/package/eslint), [dotenv](https://www.npmjs.com/package/dotenv). Các gói phụ thuộc gián tiếp có thể dùng giấy phép khác; chưa lập báo cáo license cho toàn bộ cây phụ thuộc, vì vậy cần rà soát lockfile trước khi phát hành thương mại.
-
-## Công khai việc sử dụng AI
-
-AI đã được sử dụng để hỗ trợ lập trình trong giai đoạn khởi tạo này, gồm dựng cấu trúc mã nguồn, soạn nội dung mẫu và viết script sinh DOCX/PPTX. Người thực hiện cần rà soát nội dung, mã nguồn và giấy phép các gói phụ thuộc trước khi nộp hoặc phát hành.
+Các công cụ AI hỗ trợ lập trình, bao gồm OpenAI Codex, được sử dụng để hỗ trợ triển khai, rà soát, viết tài liệu, tạo nội dung mẫu tiếng Việt và kiểm tra. Chủ dự án cần rà soát tài liệu được tạo và dependency trước khi nộp hoặc phát hành.
