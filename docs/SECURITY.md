@@ -1,18 +1,18 @@
 # Ghi chú bảo mật Papertrail
 
-Tài liệu này ghi lại các biện pháp bảo vệ thực tế đang được triển khai trong bản demo tuyển dụng một người dùng. Tài liệu không khẳng định mọi file Office bất kỳ đều an toàn, cũng không khẳng định Papertrail có khả năng cô lập người dùng như hệ thống production.
+Papertrail hiện là ứng dụng thử nghiệm dùng chung một tài khoản. Các biện pháp dưới đây giảm một số rủi ro thường gặp, nhưng không đảm bảo mọi tệp Office đều an toàn và không tạo cơ chế riêng tư cho từng người dùng.
 
 ## Tóm tắt rà soát
 
 | Hạng mục | Trạng thái | Kết quả |
 | --- | --- | --- |
 | SQL injection | ĐẠT | Giá trị tìm kiếm, bộ lọc và phân trang được truyền dưới dạng tham số TypeORM; trường sắp xếp được cố định trong code. |
-| Kiểm tra request | MỘT PHẦN | ID route, query, metadata, trường template và giới hạn upload được kiểm tra. DTO được kiểm tra tường minh trong service/controller; chưa bật `ValidationPipe` toàn cục vì DTO hiện không dùng decorator kiểm tra dữ liệu. |
-| Kiểm tra gói upload | ĐẠT CÓ GIỚI HẠN | Kiểm tra phần mở rộng, tín hiệu MIME, cấu trúc ZIP, giới hạn kích thước/tỷ lệ/số lượng, CRC, thành phần OOXML bắt buộc và relationships. Chưa kiểm tra đầy đủ schema OOXML hoặc quét mã độc. |
-| Path traversal / symlink | ĐẠT | Đường dẫn bị giới hạn trong storage root đã cấu hình và được kiểm tra theo canonical path; tên đầu ra dùng UUID. |
+| Kiểm tra yêu cầu | MỘT PHẦN | ID, tham số tìm kiếm, thông tin mẫu và trường biểu mẫu được kiểm tra. DTO được kiểm tra trong service/controller; chưa bật `ValidationPipe` toàn cục vì DTO chưa dùng decorator xác thực. |
+| Kiểm tra file Office tải lên | ĐẠT CÓ GIỚI HẠN | Kiểm tra phần mở rộng, MIME khai báo, cấu trúc ZIP, kích thước, tỷ lệ nén, CRC, các thành phần OOXML và liên kết nội bộ. Chưa kiểm tra toàn bộ chuẩn OOXML hoặc quét mã độc. |
+| Đường dẫn và symlink | ĐẠT | Đường dẫn được giữ trong thư mục lưu trữ đã cấu hình và kiểm tra theo đường dẫn thực; tên file đầu ra dùng UUID. |
 | Tải file đã tạo | ĐẠT TRONG MÔ HÌNH DEMO | Cần có bản ghi database; đường dẫn phải khớp UUID và loại file; tên file được làm sạch trước khi đưa vào header tải xuống. |
 | Cô lập người dùng | CHƯA CÓ | Mọi khách truy cập dùng chung Demo User không có xác thực. UUID chỉ là mã định danh, không phải cơ chế phân quyền. |
-| Điểm có thể gây XSS ở frontend | ĐẠT QUA RÀ SOÁT SOURCE | React hiển thị tên mẫu và giá trị tài liệu dưới dạng văn bản; không tìm thấy `dangerouslySetInnerHTML`, `innerHTML` hoặc `eval` trong `frontend/src`. |
+| Hiển thị nội dung trên frontend | ĐẠT QUA RÀ SOÁT | React hiển thị tên mẫu và nội dung tài liệu dưới dạng văn bản. Không tìm thấy `dangerouslySetInnerHTML`, `innerHTML` hoặc `eval` trong `frontend/src`. |
 | Cô lập công cụ render | KHÔNG ÁP DỤNG | Ứng dụng không chạy LibreOffice hoặc công cụ render Office khác. Preview slide/tài liệu là nội dung minh họa dựa trên metadata. |
 
 ## Các biện pháp đã triển khai
@@ -29,20 +29,19 @@ Tài liệu này ghi lại các biện pháp bảo vệ thực tế đang đư�
 
 ## Kết quả kiểm tra đã thực hiện
 
-Bộ test backend kiểm tra gói DOCX/PPTX tải lên, từ chối ZIP thường và archive có tỷ lệ nén cao, từ chối MIME sai và dữ liệu service vượt giới hạn, kiểm tra ánh xạ lỗi 413, ngăn traversal và symlink escape, xác minh ghi file độc quyền và đầu ra riêng khi có request đồng thời, bảo đảm mẫu nguồn không đổi và dọn file khi lưu metadata thất bại. Bộ test cũng kiểm tra cả 8 gói OOXML đi kèm và các luồng tạo file.
+Bộ test backend kiểm tra file DOCX/PPTX tải lên, từ chối ZIP thường, gói nén bất thường và MIME sai; kiểm tra giới hạn upload, lỗi 413, traversal, symlink, ghi file đồng thời, bảo toàn mẫu nguồn và dọn file khi lưu metadata thất bại. Test cũng kiểm tra 8 gói Office đi kèm cùng các luồng tạo file.
 
-Các lệnh dưới đây đã chạy bằng Node 24 vì npm 6 có sẵn trên hệ thống không tương thích với cách gọi script workspace lồng nhau:
+Các lệnh dưới đây được chạy lại ngày 30/10/2026 bằng Node.js 22 và npm 11:
 
-```text
-Build NestJS: ĐẠT
-Typecheck TypeScript backend: ĐẠT
-ESLint backend: ĐẠT
-Test backend: ĐẠT (24 test)
-Quét source frontend tìm HTML/eval không an toàn: ĐẠT (không có kết quả)
-Kiểm thử HTTP tích hợp với database: CHƯA CHẠY
-Kiểm thử luồng tương tác trên trình duyệt: CHƯA CHẠY
-Kiểm thử file upload tùy ý bằng Microsoft Office/LibreOffice: CHƯA CHẠY
-```
+| Kiểm tra | Kết quả |
+| --- | --- |
+| `npm run typecheck` | ĐẠT |
+| `npm run lint` | ĐẠT |
+| `npm run build` | ĐẠT |
+| `npm test` | ĐẠT — 25 bài test |
+| Rà frontend tìm `dangerouslySetInnerHTML`, `innerHTML`, `eval` | ĐẠT — không có kết quả trong `frontend/src` |
+| Test API kết nối PostgreSQL thật | CHƯA CHẠY |
+| Thử luồng bằng trình duyệt và mở file với Office | CHƯA CHẠY |
 
 ## Rủi ro và giới hạn còn lại
 
@@ -54,7 +53,7 @@ Kiểm thử file upload tùy ý bằng Microsoft Office/LibreOffice: CHƯA CH�
 - Frontend không render HTML tải lên. Nội dung được hiển thị dạng text qua cơ chế escape của React; preview Office không phải trang đã render thực tế.
 - `synchronize` vẫn tắt. Thay đổi schema database tiếp tục được quản lý bằng migration.
 
-## Cách giải thích bảo mật Papertrail trong phỏng vấn kỹ thuật
+## Nếu được hỏi về bảo mật trong buổi phỏng vấn
 
 ### 1. Ngăn ZIP bomb và file Office lỗi cấu trúc
 

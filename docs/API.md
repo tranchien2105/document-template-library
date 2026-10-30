@@ -1,6 +1,6 @@
 # API và mô hình dữ liệu
 
-Mọi API nghiệp vụ có tiền tố `/api`. Khi dùng demo production, frontend gọi cùng origin qua Caddy; khi chạy local, backend mặc định ở `http://localhost:3001`.
+Các API của ứng dụng dùng tiền tố `/api`. Trên website, trình duyệt gọi API cùng địa chỉ với giao diện qua Caddy. Khi chạy local, backend mặc định ở `http://localhost:3001`.
 
 ## Endpoint chính
 
@@ -21,7 +21,7 @@ Mọi API nghiệp vụ có tiền tố `/api`. Khi dùng demo production, front
 | `PATCH` | `/api/templates/:id` | Sửa tên, mô tả hoặc danh mục |
 | `DELETE` | `/api/templates/:id` | Ẩn mẫu khỏi thư viện, giữ file nguồn |
 
-Tạo DOCX/PPTX nhận JSON dạng `{ "values": { "field_key": "Nội dung" } }`. Upload nhận các trường `file`, `name`, `description`, `category`. Response tạo file tương thích frontend:
+Khi tạo DOCX/PPTX, gửi JSON dạng `{ "values": { "field_key": "Nội dung" } }`. Khi tải mẫu lên, gửi `file`, `name`, `description` và `category` bằng `multipart/form-data`. Phản hồi khi tạo file:
 
 ```json
 {
@@ -31,7 +31,7 @@ Tạo DOCX/PPTX nhận JSON dạng `{ "values": { "field_key": "Nội dung" } }`
 }
 ```
 
-Danh sách mẫu trả `{ items, meta }`. Metadata tài liệu không tiết lộ đường dẫn filesystem nội bộ.
+Danh sách mẫu trả `{ items, meta }`. Thông tin tài liệu trả về cho trình duyệt không chứa đường dẫn lưu file trên máy chủ.
 
 ## Mô hình dữ liệu
 
@@ -66,8 +66,8 @@ erDiagram
     }
 ```
 
-`Template` và `User` dùng ID số nguyên; `Document` dùng UUID. PostgreSQL giữ metadata; file mẫu và file tạo ra nằm ở các thư mục storage riêng. Migration chạy khi backend khởi động; không bật TypeORM `synchronize`.
+`Template` và `User` dùng ID số nguyên; `Document` dùng UUID. PostgreSQL lưu thông tin mẫu và file đã tạo. File mẫu và file đầu ra nằm ở các thư mục riêng. Backend chạy migration khi khởi động; TypeORM `synchronize` được tắt.
 
 ## Thư viện và giấy phép
 
-Các thư viện chính: Next.js, React, NestJS, TypeORM, `pg`, `docx`, `pptxgenjs` (MIT); TypeScript, RxJS, `reflect-metadata` (Apache-2.0); `dotenv` (BSD-2-Clause). JSZip được phát hành theo MIT hoặc GPL-3.0-or-later. Xem dependency đã khóa trong `package-lock.json` trước khi phân phối.
+Các thư viện chính gồm Next.js, React, NestJS, TypeORM, `pg`, `docx` và `pptxgenjs` (MIT); TypeScript, RxJS và `reflect-metadata` (Apache-2.0); `dotenv` (BSD-2-Clause). JSZip có hai lựa chọn giấy phép: MIT hoặc GPL-3.0-or-later. Danh sách phiên bản đang dùng nằm trong `package-lock.json`.

@@ -1,15 +1,22 @@
-# Template manifest
+# Danh sách và cách quản lý mẫu
 
-`storage/templates/manifest.json` is the canonical starter catalog and metadata source. Names, categories, descriptions, Office document copy, and preview outlines are in Vietnamese. Technical slugs and file names remain stable English identifiers.
+`storage/templates/manifest.json` là danh sách khởi tạo và nguồn thông tin cho các mẫu đi kèm. Tên, danh mục, mô tả và nội dung xem trước viết bằng tiếng Việt; `slug` và tên file giữ ổn định để dùng trong code.
 
-Each entry contains a stable integer `id`, unique technical `slug`, Vietnamese `name`, `type` (`document` or `presentation`), `category`, `description`, a relative `filePath`, optional `thumbnailPath`, and structured `preview` data. DOCX previews include `sections`, the exact `placeholders`, and `fields` used by the document creation form. PPTX previews include `slideCount`, slide titles, `slideFields` mapping placeholder keys to each slide, and `fields` used by the presentation form. A field has a storage `key`, source `label` (localized by the frontend), `required` flag, input `type` when needed, and `maxLength`.
+Mỗi mẫu có `id`, `slug`, tên, loại (`document` hoặc `presentation`), danh mục, mô tả, đường dẫn file tương đối, thumbnail nếu có và dữ liệu `preview`. Preview DOCX mô tả các phần, placeholder và trường trên biểu mẫu. Preview PPTX có số slide, tiêu đề và các trường gắn với từng slide. Mỗi trường ghi rõ khóa, nhãn, có bắt buộc hay không, kiểu nhập và độ dài tối đa.
 
-The preview is an outline, not a rendered Office page. No thumbnail is referenced until a real thumbnail file exists; the website supplies a designed fallback.
+Preview là bản dựng từ nội dung trong file Office, không phải ảnh chụp trang Word hoặc slide PowerPoint. Nếu mẫu chưa có thumbnail, giao diện sẽ hiển thị ảnh thay thế.
 
-## Canonical data and synchronization
+## Đồng bộ dữ liệu mẫu
 
-The generator updates IDs 1–8 and preserves unrelated entries. IDs and slugs are stable. On backend startup, database migrations run first; the seed then checks each ID, slug, type, category, metadata, relative path, extension, and file existence before upserting manifest rows. Removed entries are marked inactive. The sync is repeatable and does not make duplicate records. PostgreSQL is the runtime query store; the manifest remains the source of truth for the starter template catalog.
+Script sinh mẫu cập nhật các ID từ 1 đến 8 và giữ nguyên các mẫu khác trong manifest. ID và `slug` không đổi giữa các lần sinh.
 
-## Adding a template
+Khi backend khởi động, migration chạy trước, sau đó service kiểm tra thông tin và file của từng mẫu rồi đồng bộ vào PostgreSQL. Nếu một mẫu bị bỏ khỏi manifest, mẫu đó được ngừng hiển thị thay vì xóa file nguồn. Quá trình có thể chạy lại mà không tạo bản ghi trùng. PostgreSQL phục vụ truy vấn khi ứng dụng chạy; manifest mô tả bộ mẫu khởi tạo.
 
-Add its Office content and definition in `scripts/generate-templates/generate.mjs`, assign a new stable integer ID and unique slug, and run `npm run templates:generate`. DOCX placeholders are detected from the generated document and PPTX placeholders from slide definitions; both provide the form field list. Preserve matching key names between Office content and generated metadata. Review the generated file and manifest before adding a new template to a release. Use `npm run templates:generate -- --presentations-only` to regenerate only PPTX files.
+## Thêm mẫu mới
+
+1. Thêm nội dung và khai báo mẫu trong `scripts/generate-templates/generate.mjs`.
+2. Chọn ID chưa dùng và `slug` riêng; giữ nguyên các khóa placeholder giữa file Office và manifest.
+3. Chạy `npm run templates:generate` để sinh file và cập nhật manifest.
+4. Kiểm tra lại file, preview và manifest trước khi phát hành.
+
+Chỉ sinh lại PPTX bằng `npm run templates:generate -- --presentations-only`.

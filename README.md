@@ -1,6 +1,6 @@
 # Papertrail — Thư viện mẫu tài liệu
 
-Papertrail giúp người dùng **tìm mẫu, xem trước, sửa nội dung theo trường có sẵn và tải xuống DOCX/PPTX**. Đây là MVP full-stack phục vụ bài đánh giá tuyển dụng.
+Papertrail là ứng dụng giúp người dùng **tìm mẫu, xem trước, điền nội dung và tải xuống tài liệu DOCX/PPTX**. Dự án được xây dựng cho bài đánh giá tuyển dụng.
 
 ## Dùng thử ngay
 
@@ -83,7 +83,7 @@ flowchart LR
 
 - **Frontend:** Next.js, React, TypeScript.
 - **Backend:** NestJS, TypeORM; API REST.
-- **Cơ sở dữ liệu:** PostgreSQL; migration tạo schema và Demo User khi backend khởi động.
+- **Cơ sở dữ liệu:** PostgreSQL; migration tạo cấu trúc bảng và tài khoản Demo User khi backend khởi động.
 - **Tạo file:** `docx`, `pptxgenjs`; JSZip xử lý placeholder trong gói Office Open XML.
 - **Lưu trữ:** mẫu và file tạo ra ở các thư mục riêng; Docker Compose dùng volume để giữ dữ liệu.
 
@@ -104,19 +104,20 @@ Test backend kiểm tra upload Office, placeholder, XML, bảo toàn file nguồ
 
 ## Giới hạn cần biết
 
-- Đây là bản demo dùng chung một Demo User; **chưa có đăng nhập hay cách ly dữ liệu nhiều người dùng**.
+- Ứng dụng dùng chung một Demo User; **chưa có đăng nhập hay cách ly dữ liệu giữa nhiều người dùng**.
 - DOCX sửa được các trường do template định nghĩa, chưa phải trình soạn thảo Word tự do.
-- Không có PowerPoint editor tích hợp. Có thể sửa file PPTX đã tải bằng PowerPoint hoặc ứng dụng tương thích.
+- Chưa có trình sửa slide tích hợp. Có thể sửa file PPTX đã tải bằng PowerPoint hoặc ứng dụng tương thích.
 - Preview được tái dựng từ dữ liệu bên trong DOCX/PPTX, không phải ảnh render nguyên bản; cách xuống dòng, font và hiệu ứng có thể khác ứng dụng Office.
-- Upload có kiểm tra định dạng và cấu trúc gói Office, nhưng không thay thế antivirus.
+- Tệp tải lên được kiểm tra định dạng và cấu trúc gói Office; bước này không thay thế phần mềm quét mã độc.
 
 ## Tài liệu và bàn giao
 
 - [Chạy thử cho người mới](docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md)
-- [Kịch bản quay demo 3–5 phút](docs/DEMO.md)
 - [Triển khai Ubuntu VPS](docs/DEPLOYMENT-UBUNTU.md)
 - [API và mô hình dữ liệu](docs/API.md)
 - [Bảo mật và giới hạn](docs/SECURITY.md)
 - [Checklist bàn giao](docs/HANDOVER.md)
 
-Các thư viện mã nguồn mở chính gồm Next.js, NestJS, TypeORM, JSZip, `docx` và `pptxgenjs`; giấy phép được ghi trong [docs/API.md](docs/API.md). OpenAI Codex được dùng hỗ trợ triển khai, rà soát và kiểm tra; code và kết quả cần được chủ dự án tự đánh giá trước khi nộp.
+Khi gửi bài, đính kèm video quay màn hình theo yêu cầu của nhà tuyển dụng. Video không nằm trong repository.
+
+Các thư viện chính và giấy phép được liệt kê trong [docs/API.md](docs/API.md). Tôi có sử dụng OpenAI Codex để hỗ trợ viết và rà soát code, tài liệu, cũng như kiểm tra một số luồng của ứng dụng.
