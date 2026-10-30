@@ -24,7 +24,7 @@ Lần đầu cần Internet để Docker tải image và dependency. Website ở
 
 ## 4. Tài liệu API / cấu trúc dữ liệu — ĐÃ CÓ
 
-- API, ví dụ request, Template/Document/User và cấu trúc lưu trữ được mô tả trong [`README.md`](../README.md).
+- API, ví dụ request và Template/Document/User được mô tả trong [`API.md`](API.md).
 - Nguồn metadata mẫu, field, preview và cách đồng bộ được mô tả trong [`template-manifest.md`](template-manifest.md) và `storage/templates/manifest.json`.
 
 ## 5. Bộ dữ liệu và template — ĐÃ CÓ, ĐÃ KIỂM TRA CẤU TRÚC
