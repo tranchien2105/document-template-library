@@ -1,6 +1,6 @@
 # Chạy thử Papertrail trên máy Windows
 
-Làm lần lượt từng bước dưới đây. Bạn **không cần cài Node.js, npm, Python hay PostgreSQL**. Chỉ cần Docker Desktop và Internet trong lần chạy đầu tiên.
+Thực hiện các bước dưới đây để chạy Papertrail trên Windows. Không cần cài Node.js, npm, Python hay PostgreSQL; chỉ cần Docker Desktop và kết nối Internet trong lần chạy đầu.
 
 ## Bước 1: Cài Docker Desktop
 
@@ -8,9 +8,9 @@ Làm lần lượt từng bước dưới đây. Bạn **không cần cài Node.
 2. Tải Docker Desktop và cài đặt theo hướng dẫn trên màn hình. Nếu được hỏi cách chạy, chọn WSL 2.
 3. Khởi động lại máy nếu trình cài đặt yêu cầu.
 4. Mở ứng dụng **Docker Desktop** từ Start Menu.
-5. Chờ đến khi Docker Desktop báo engine đã chạy. Đừng đóng ứng dụng này trong lúc dùng Papertrail.
+5. Chờ đến khi Docker Desktop báo engine đã chạy. Giữ Docker Desktop mở trong suốt quá trình sử dụng Papertrail.
 
-> Docker Desktop có điều khoản sử dụng riêng. Hãy đọc điều khoản trên trang Docker nếu bạn dùng máy của doanh nghiệp.
+> Docker Desktop có điều khoản sử dụng riêng. Máy thuộc doanh nghiệp cần tuân theo điều khoản áp dụng của Docker.
 
 ## Bước 2: Tải source code
 
@@ -38,7 +38,7 @@ Kiểm tra thư mục hiện tại có `docker-compose.yml`:
 dir docker-compose.yml
 ```
 
-Nếu PowerShell báo không tìm thấy file, bạn đang đứng nhầm thư mục. Dùng File Explorer mở đúng thư mục dự án rồi mở PowerShell lại ở đó.
+Nếu PowerShell báo không tìm thấy file, cửa sổ đang ở sai thư mục. Dùng File Explorer mở đúng thư mục dự án rồi mở PowerShell tại đó.
 
 ## Bước 3: Khởi động Papertrail
 
@@ -82,7 +82,7 @@ Lệnh trên giữ lại database và file đã tạo để lần sau dùng ti�
 - **`docker` không được nhận diện:** Docker Desktop chưa cài xong hoặc PowerShell đã mở trước khi cài. Đóng PowerShell, mở lại; nếu vẫn lỗi, mở Docker Desktop và đợi khởi động xong.
 - **Không kết nối được Docker Engine/daemon:** Docker Desktop chưa chạy. Mở Docker Desktop và chờ trạng thái engine hoạt động.
 - **Lệnh chạy nhưng tải rất lâu:** lần đầu Docker cần tải image và dependency. Kiểm tra Internet và cứ để lệnh chạy; không đóng cửa sổ.
-- **Báo port đã được sử dụng:** một chương trình khác đang chiếm cổng `3000`, `3001` hoặc `5432`. Tắt chương trình đó rồi chạy lại. Có thể cần hỏi người hỗ trợ nếu chưa biết chương trình nào.
+- **Báo port đã được sử dụng:** một chương trình khác đang chiếm cổng `3000`, `3001` hoặc `5432`. Dừng chương trình đang dùng cổng đó rồi chạy lại; nếu không xác định được chương trình, liên hệ người hỗ trợ máy tính.
 - **Trang web chưa mở được ngay:** giữ PowerShell mở thêm một lúc; frontend chỉ khởi động sau khi backend và database sẵn sàng. Sau đó tải lại `http://localhost:3000`.
 - **Muốn xem log sau khi đã chạy nền:** tại thư mục dự án, chạy `docker compose logs -f`; nhấn **Ctrl+C** để dừng xem log (các container vẫn chạy).
 
@@ -95,4 +95,4 @@ Lệnh trên giữ lại database và file đã tạo để lần sau dùng ti�
 | Xem trạng thái các dịch vụ | `docker compose ps` |
 | Xem log | `docker compose logs -f` |
 
-Làm theo hướng dẫn này cũng có thể áp dụng cho macOS/Linux sau khi cài Docker Compose; cách cài Docker Desktop phụ thuộc hệ điều hành.
+Các lệnh Docker Compose trên cũng dùng được trên macOS/Linux sau khi cài Docker. Cách cài Docker phụ thuộc hệ điều hành.

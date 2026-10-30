@@ -24,8 +24,8 @@ Nhấn `Ctrl+C` để dừng. `docker compose down` xóa container nhưng giữ 
 
 | Sản phẩm | Chức năng |
 | --- | --- |
-| Thư viện DOCX | Tìm kiếm, lọc, xem trước, sửa trường mẫu, tạo và tải DOCX |
-| Thư viện PPTX | Tìm kiếm, lọc, xem các slide, điền trường, tạo bản sao và tải PPTX |
+| Thư viện DOCX | Tìm kiếm, lọc, xem trước, sửa các trường mẫu, tạo và tải DOCX |
+| Thư viện PPTX | Tìm kiếm, lọc, xem trước các slide, thay placeholder được khai báo, tạo bản sao và tải PPTX |
 | Quản lý mẫu | Tải DOCX/PPTX lên, sửa thông tin, cập nhật thumbnail hoặc ẩn mẫu |
 | Tài liệu của tôi | Xem và tải các file đã tạo |
 
@@ -68,11 +68,11 @@ flowchart LR
     G[Mẫu nguồn] -. được giữ nguyên .-> D
 ```
 
-Trong môi trường production, Caddy nhận yêu cầu HTTP và chuyển tiếp tới Next.js hoặc NestJS. PostgreSQL, frontend và backend không mở cổng trực tiếp ra Internet.
+Trong môi trường production, Caddy nhận lưu lượng HTTP/HTTPS và chuyển tiếp tới Next.js hoặc NestJS. PostgreSQL, frontend và backend không được mở trực tiếp ra Internet.
 
 ```mermaid
 flowchart LR
-    User[Trình duyệt] --> Caddy[Caddy :80]
+    User[Trình duyệt] --> Caddy[Caddy :80 / :443]
     Caddy -->|Trang web| Next[Next.js :3000]
     Caddy -->|/api/* và /health| Nest[NestJS :3001]
     Nest --> DB[(PostgreSQL :5432)]
@@ -87,7 +87,7 @@ flowchart LR
 - **Tạo file:** `docx`, `pptxgenjs`; JSZip xử lý placeholder trong gói Office Open XML.
 - **Lưu trữ:** mẫu và file tạo ra ở các thư mục riêng; Docker Compose dùng volume để giữ dữ liệu.
 
-Danh sách API, ví dụ request và mô hình `Template` – `Document` – `User` nằm trong [docs/API.md](docs/API.md). Cách đăng ký mẫu và các trường có thể điền được mô tả trong [docs/template-manifest.md](docs/template-manifest.md).
+Danh sách API và mô hình `Template` – `Document` – `User` nằm trong [docs/API.md](docs/API.md). Cách thêm mẫu qua giao diện hoặc cập nhật bộ mẫu đi kèm được mô tả trong [docs/template-manifest.md](docs/template-manifest.md). Bộ DOCX/PPTX HR để thử tải mẫu lên nằm trong [storage/template-upload-samples/hr/](storage/template-upload-samples/hr/README.md).
 
 ## Kiểm tra code
 
@@ -116,3 +116,4 @@ Test backend bao phủ upload Office, thay placeholder, xử lý XML, giữ nguy
 - [Hướng dẫn triển khai Ubuntu VPS](docs/DEPLOYMENT-UBUNTU.md)
 - [API và mô hình dữ liệu](docs/API.md)
 - [Bảo mật và giới hạn](docs/SECURITY.md)
+- [Checklist bàn giao, tình trạng và giới hạn](docs/HANDOVER.md)

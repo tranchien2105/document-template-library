@@ -8,15 +8,20 @@ Preview là bản dựng từ nội dung trong file Office, không phải ảnh 
 
 ## Đồng bộ dữ liệu mẫu
 
-Script sinh mẫu cập nhật các ID từ 1 đến 8 và giữ nguyên các mẫu khác trong manifest. ID và `slug` không đổi giữa các lần sinh.
+Script sinh bộ mẫu đi kèm cập nhật các ID từ 1 đến 8 và giữ nguyên những mục khác trong manifest. ID và `slug` của bộ này ổn định giữa các lần sinh.
 
-Khi backend khởi động, migration chạy trước, sau đó service kiểm tra thông tin và file của từng mẫu rồi đồng bộ vào PostgreSQL. Nếu một mẫu bị bỏ khỏi manifest, mẫu đó được ngừng hiển thị thay vì xóa file nguồn. Quá trình có thể chạy lại mà không tạo bản ghi trùng. PostgreSQL phục vụ truy vấn khi ứng dụng chạy; manifest mô tả bộ mẫu khởi tạo.
+Khi backend khởi động, migration chạy trước; sau đó service kiểm tra thông tin và file trong manifest rồi đồng bộ các mẫu đó vào PostgreSQL. Đồng bộ có thể chạy lại mà không tạo bản ghi trùng. Metadata đã sửa trong trang Quản lý mẫu được giữ lại khi backend khởi động lại. Xóa một mục khỏi manifest không tự ẩn hoặc xóa bản ghi đã có trong PostgreSQL; dùng chức năng ẩn mẫu trong trang Quản lý mẫu để ngừng hiển thị mẫu.
 
-## Thêm mẫu mới
+## Tải mẫu mới qua giao diện
 
-1. Thêm nội dung và khai báo mẫu trong `scripts/generate-templates/generate.mjs`.
-2. Chọn ID chưa dùng và `slug` riêng; giữ nguyên các khóa placeholder giữa file Office và manifest.
-3. Chạy `npm run templates:generate` để sinh file và cập nhật manifest.
-4. Kiểm tra lại file, preview và manifest trước khi phát hành.
+1. Mở trang **Quản lý mẫu** và chọn DOCX hoặc PPTX.
+2. Chọn file Office hợp lệ, nhập tên, mô tả và danh mục rồi tải lên.
+3. Sau khi mẫu xuất hiện trong danh sách, dùng **Sửa** để cập nhật thông tin hoặc thêm thumbnail.
+4. Mẫu được lưu trong database và hiển thị qua API; không cần sửa giao diện hoặc manifest.
 
-Chỉ sinh lại PPTX bằng `npm run templates:generate -- --presentations-only`.
+## Cập nhật bộ mẫu đi kèm source
+
+1. Khai báo nội dung, placeholder và metadata trong `scripts/generate-templates/generate.mjs`.
+2. Giữ nguyên ID/`slug` hiện có; dùng ID chưa có khi bổ sung mẫu.
+3. Chạy `npm run templates:generate` để sinh file và cập nhật manifest. Dùng `npm run templates:generate -- --presentations-only` nếu chỉ sinh PPTX; `npm run templates:generate:documents` nếu chỉ sinh DOCX.
+4. Kiểm tra file, preview và manifest trước khi phát hành.

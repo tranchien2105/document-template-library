@@ -18,10 +18,12 @@ Các API của ứng dụng dùng tiền tố `/api`. Trên website, trình duy�
 | `GET` | `/api/files/:uuid` | Tải file đã tạo |
 | `POST` | `/api/templates` | Tải DOCX mới lên (`multipart/form-data`) |
 | `POST` | `/api/templates/presentations` | Tải PPTX mới lên (`multipart/form-data`) |
+| `GET` | `/api/templates/:id/thumbnail` | Lấy thumbnail của mẫu |
+| `POST` | `/api/templates/:id/thumbnail` | Tải hoặc cập nhật thumbnail PNG/JPG/WebP |
 | `PATCH` | `/api/templates/:id` | Sửa tên, mô tả hoặc danh mục |
 | `DELETE` | `/api/templates/:id` | Ẩn mẫu khỏi thư viện, giữ file nguồn |
 
-Khi tạo DOCX/PPTX, gửi JSON dạng `{ "values": { "field_key": "Nội dung" } }`. Khi tải mẫu lên, gửi `file`, `name`, `description` và `category` bằng `multipart/form-data`. Phản hồi khi tạo file:
+`GET /api/templates` nhận các query `type`, `category`, `search`, `page` và `limit`. Khi tạo DOCX hoặc bản sao PPTX, gửi JSON dạng `{ "values": { "field_key": "Nội dung" } }`. Các khóa hợp lệ lấy từ trường của mẫu; với PPTX, backend thay placeholder trong các slide rồi lưu thành một bản sao độc lập. Khi tải mẫu lên, gửi `file`, `name`, `description` và `category` bằng `multipart/form-data`. Khi tải thumbnail, trường file có tên `file`; chỉ nhận PNG, JPG hoặc WebP, tối đa 5 MiB. Phản hồi khi tạo file:
 
 ```json
 {
@@ -62,7 +64,9 @@ erDiagram
         string type
         string file_name
         string file_path
-        jsonb values
+        jsonb form_data
+        timestamptz created_at
+        timestamptz updated_at
     }
 ```
 

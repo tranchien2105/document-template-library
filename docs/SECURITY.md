@@ -53,7 +53,7 @@ Các lệnh dưới đây được chạy lại ngày 30/10/2026 bằng Node.js 
 - Frontend không render HTML tải lên. Nội dung được hiển thị dạng text qua cơ chế escape của React; preview Office không phải trang đã render thực tế.
 - `synchronize` vẫn tắt. Thay đổi schema database tiếp tục được quản lý bằng migration.
 
-## Nếu được hỏi về bảo mật trong buổi phỏng vấn
+## Mô tả các biện pháp bảo mật
 
 ### 1. Ngăn ZIP bomb và file Office lỗi cấu trúc
 
