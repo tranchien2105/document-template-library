@@ -48,7 +48,7 @@ Trước khi quay, kiểm tra thông tin cá nhân/đường dẫn nhạy cảm 
 
 ## 7. Trạng thái hoàn thành và giới hạn — ĐÃ CÓ
 
-Các chức năng đã hoàn thành, giới hạn kỹ thuật và hướng phát triển tiếp theo nằm trong mục “Chức năng”, “Giới hạn hiện tại” và “Hướng phát triển tiếp theo” của [`README.md`](../README.md). Tóm tắt: DOCX chỉnh sửa theo các trường đã khai báo; PPTX được điền trường và sao chép để chỉnh sửa bằng ứng dụng Office bên ngoài; preview được dựng từ cấu trúc OOXML chứ không phải ảnh render nguyên bản; ứng dụng dùng một Demo User và chưa có xác thực.
+Các chức năng chính và giới hạn hiện tại được tóm tắt trong [`README.md`](../README.md); chi tiết bảo mật nằm trong [`SECURITY.md`](SECURITY.md). Tóm tắt: DOCX chỉnh sửa theo các trường đã khai báo; PPTX được điền trường và sao chép để chỉnh sửa bằng ứng dụng Office bên ngoài; preview được dựng từ cấu trúc OOXML chứ không phải ảnh render nguyên bản; ứng dụng dùng một Demo User và chưa có xác thực.
 
 ## Trước khi gửi nhà tuyển dụng
 
