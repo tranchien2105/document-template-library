@@ -1,24 +1,29 @@
-:80 {
-	encode zstd gzip
 
-	@caddy_health path /_caddy-health
-	respond @caddy_health "ok" 200
+papertrail-dev.duckdns.org {
+    encode zstd gzip
 
-	@api path /api /api/*
-	handle @api {
-		# Keep requests within the backend's configured 10 MiB file limit plus multipart overhead.
-		request_body {
-			max_size 12MB
-		}
-		reverse_proxy backend:3001
-	}
+    @caddy_health path /_caddy-health
+    respond @caddy_health "ok" 200
 
-	handle /health {
-		reverse_proxy backend:3001
-	}
+    @api path /api /api/*
+    handle @api {
+        # Limit uploads to 12 MB including multipart overhead.
+        request_body {
+            max_size 12MB
+        }
+        reverse_proxy backend:3001
+    }
 
-	# Caddy forwards the original path and query string unless explicitly rewritten.
-	handle {
-		reverse_proxy frontend:3000
-	}
+    handle /health {
+        reverse_proxy backend:3001
+    }
+
+    handle {
+        reverse_proxy frontend:3000
+    }
+}
+
+# Internal healthcheck only, not exposed publicly.
+:8080 {
+    respond /_caddy-health "ok" 200
 }
