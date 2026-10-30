@@ -33,6 +33,8 @@ docker compose up --build
 
 Hướng dẫn từng bước cho người mới trên Windows, gồm cách tải source từ GitHub và khắc phục lỗi thường gặp: [`docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md`](docs/HUONG-DAN-CHAY-CHO-NGUOI-MOI.md).
 
+Hướng dẫn triển khai production lên Ubuntu 24.04 bằng Docker Compose và Caddy: [`docs/DEPLOYMENT-UBUNTU.md`](docs/DEPLOYMENT-UBUNTU.md). Cấu hình production nằm trong `docker-compose.prod.yml`; cấu hình phát triển bên dưới không bị thay đổi.
+
 Lần đầu chạy, Docker sẽ tải image nền và cài dependency trong lúc build, nên cần Internet và có thể mất vài phút. Khi các dịch vụ đã khởi động:
 
 - Website: <http://localhost:3000>
